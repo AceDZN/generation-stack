@@ -164,6 +164,13 @@ export class LevelRun {
   totalPopulation(): number {
     return this.towers.reduce((n, _, i) => n + this.population(i), 0);
   }
+  /** The population in the year on the counter: the tower as the decade began, before this decade's
+   * births and arrivals are placed (they are born or arrive during the coming ten years). */
+  yearPopulation(tower?: number): number {
+    const towers = this.snap?.towers ?? this.towers;
+    if (tower !== undefined) return total(counts(towers[tower]));
+    return towers.reduce((n, t) => n + total(counts(t)), 0);
+  }
   mandatoryLeft(): number {
     return this.tray.length;
   }
@@ -363,8 +370,8 @@ export class LevelRun {
   /** Goal 'exact': ring the bell when the tower holds exactly the target. */
   ringBell(): boolean {
     if (this.def.goal !== 'exact' || this.phase !== 'place') return false;
-    const ok = this.totalPopulation() === this.def.exactTarget;
-    this.record('bell', { population: this.totalPopulation(), year: this.year }, ok ? 'right' : 'wrong');
+    const ok = this.yearPopulation() === this.def.exactTarget;
+    this.record('bell', { population: this.yearPopulation(), year: this.year }, ok ? 'right' : 'wrong');
     if (ok) this.win();
     else {
       this.mistakes++;

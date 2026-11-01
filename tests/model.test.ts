@@ -107,3 +107,22 @@ test('a migrant group sent to the wrong floor bounces and counts as a mistake', 
   assert.equal(run.mistakes, 1);
   assert.equal(run.place(m.id, 2, 'left'), 'ok');
 });
+
+test('the bell judges the population of the year on the counter, before or after placing the new babies', async () => {
+  const { LEVELS } = await import('../src/model/levels.ts');
+  const { solve } = await import('../src/model/solver.ts');
+  const L = LEVELS.find((l) => l.goal === 'exact')!;
+  const plan = solve(L);
+  const run = new LevelRun(L);
+  for (const a of plan.actions) {
+    if (a.type === 'bell') break;
+    if (a.type === 'place') run.place(a.piece, a.band, a.side);
+    else if (a.type === 'build') run.build(a.kind, a.tower, a.band, a.side);
+    else if (a.type === 'choice') run.makeChoice(a.option);
+    else if (a.type === 'crank') run.crank();
+  }
+  assert.equal(run.yearPopulation(), L.exactTarget);
+  for (const p of [...run.tray]) run.place(p.id, p.band, 'left');
+  assert.ok(run.totalPopulation() >= L.exactTarget!);
+  assert.equal(run.ringBell(), true);
+});

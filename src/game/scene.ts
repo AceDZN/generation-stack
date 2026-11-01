@@ -347,7 +347,7 @@ export class World {
     const dh = h / 2 / Math.tan(vfov / 2);
     const dw = w / 2 / Math.tan(hfov / 2);
     // never back out past the plaza trees and houses
-    this.wantDist = Math.min(Math.max(dh, dw) * (portrait ? 1.0 : 0.98) + 1.6, portrait ? 24 : 28);
+    this.wantDist = Math.min(Math.max(dh, dw) * (portrait ? 1.0 : 0.98) + 1.6, portrait ? 24 : 34);
   }
 
   update(dt: number, reduced: boolean): void {

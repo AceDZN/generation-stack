@@ -105,7 +105,7 @@ export const LEVELS: LevelDef[] = [
     titleHe: 'בדיוק לפי החשבון',
     conceptHe: 'ריבוי טבעי = ילודה − תמותה, לכל 1000 תושבים בשנה. בעשור שבו הילודה 30 והתמותה 10, המגדל גדל בכ-20%.',
     introHe: [
-      'ראש העיר של הודו רוצה לחגוג כשבמגדל יהיו בדיוק 28 משפחות.',
+      'ראש העיר של הודו רוצה לחגוג כשבמגדל יהיו בדיוק 28 קוביות.',
       'הלוח מראה ילודה ותמותה לכל 1000. הריבוי הטבעי הוא ההפרש ביניהן.',
       'צלצלו בפעמון בעשור הנכון. משיכה נוספת של המנוף תעבור את היעד!',
     ],
@@ -220,7 +220,7 @@ export const LEVELS: LevelDef[] = [
     decades: 2,
     towers: [tower('יפן', 'japan', 2000, 40, [wpp('japan', 2000), wpp('japan', 2010)])],
     goal: 'reach',
-    peoplePerBlock: 3600000,
+    peoplePerBlock: 3200000,
     wind: 0.2,
     supplyFactor: 0.3,
     hints: true,
@@ -267,7 +267,7 @@ export const LEVELS: LevelDef[] = [
     decades: 2,
     towers: [
       tower('ניז\'ר', 'niger', 2000, 10, [wpp('niger', 2000), wpp('niger', 2010)], { baseX: -7 }),
-      tower('יפן', 'japan', 2000, 40, [wpp('japan', 2000), wpp('japan', 2010)], { baseX: 7 }),
+      tower('יפן', 'japan', 2000, 40, [wpp('japan', 2000), wpp('japan', 2010)], { baseX: 7, peoplePerBlock: 3200000 }),
     ],
     goal: 'reach',
     peoplePerBlock: 1150000,
@@ -316,7 +316,7 @@ export const LEVELS: LevelDef[] = [
     introHe: [
       'לספרד נכנסים אנשים, וגם יוצאים ממנה, וכולם מופיעים על לוח הזמנים.',
       'מאזן הגירה = נכנסים − יוצאים. הוא מוסיף למגדל או מוריד ממנו, בנוסף לריבוי הטבעי.',
-      'צלצלו בפעמון כשבמגדל יהיו בדיוק 29 משפחות.',
+      'צלצלו בפעמון כשבמגדל יהיו בדיוק 29 קוביות.',
     ],
     startYear: 1990,
     decades: 3,
@@ -601,9 +601,9 @@ export const LEVELS: LevelDef[] = [
     decades: 3,
     towers: [
       tower('ישראל', 'israel', 2020, 36, [
-        given(WORKBOOK.israel.cbr, WORKBOOK.israel.cdr, { arrivals: [group('f20', 'aliyah', 'plane', { 3: 1 }, 'עולים בשנות ה-30 לחייהם')], eventHe: 'התחזית: 19 לידות ו-5 פטירות לכל 1000. העשרה: עולים, אם העלייה תימשך כמו בשנות ה-2010' }),
-        wpp('israel', 2030, { arrivals: [group('f30', 'aliyah', 'plane', { 2: 1 }, 'עולים בשנות ה-20 לחייהם')], eventHe: 'התחזית: 17 לידות ו-6 פטירות לכל 1000. העשרה: עולים, אם העלייה תימשך כמו בשנות ה-2010' }),
-        wpp('israel', 2040, { arrivals: [group('f40', 'aliyah', 'plane', { 4: 1 }, 'עולים בשנות ה-40 לחייהם')], eventHe: 'התחזית: 17 לידות ו-6 פטירות לכל 1000. העשרה: עולים, אם העלייה תימשך כמו בשנות ה-2010' }),
+        given(WORKBOOK.israel.cbr, WORKBOOK.israel.cdr, { arrivals: [group('f20', 'aliyah', 'plane', { 3: 1 }, 'עולים בשנות ה-30 לחייהם')], eventHe: 'התחזית: 19 לידות ו-5 פטירות לכל 1000. הערכה: עולים, אם העלייה תימשך כמו בשנות ה-2010' }),
+        wpp('israel', 2030, { arrivals: [group('f30', 'aliyah', 'plane', { 2: 1 }, 'עולים בשנות ה-20 לחייהם')], eventHe: 'התחזית: 17 לידות ו-6 פטירות לכל 1000. הערכה: עולים, אם העלייה תימשך כמו בשנות ה-2010' }),
+        wpp('israel', 2040, { arrivals: [group('f40', 'aliyah', 'plane', { 4: 1 }, 'עולים בשנות ה-40 לחייהם')], eventHe: 'התחזית: 17 לידות ו-6 פטירות לכל 1000. הערכה: עולים, אם העלייה תימשך כמו בשנות ה-2010' }),
       ]),
     ],
     goal: 'choose',

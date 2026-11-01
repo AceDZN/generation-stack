@@ -2,8 +2,8 @@
 // the Workbook host events and the test hooks (render_game_to_text, advanceTime).
 
 import * as THREE from 'three';
-import { LevelRun, type Piece } from '../model/game.ts';
-import { BANDS, BAND_COUNT, GROUP_HE, SERVICE_FOR, SERVICE_HE, type Group, type LevelDef, type ServiceType, type Side, groupOf } from '../model/types.ts';
+import { LevelRun, NEAR_MARGIN, type Piece } from '../model/game.ts';
+import { BANDS, BAND_COUNT, GROUP_HE, SERVICE_FOR, SERVICE_HE, type Band, type Group, type LevelDef, type ServiceType, type Side, groupOf } from '../model/types.ts';
 import { CAPACITY, naturalIncrease, total } from '../model/demography.ts';
 import { counts, stability } from '../model/tower.ts';
 import { rapierJudge, type Recording } from '../physics/judge.ts';
@@ -31,6 +31,7 @@ const TRANSPORT_ICON = { boat: '🚢', train: '🚆', plane: '✈️', bus: '�
 const $ = (id: string) => document.getElementById(id)!;
 
 function fmtPeople(n: number): string {
+  if (n >= 1e9) return `${(n / 1e9).toFixed(1)} מיליארד`;
   if (n >= 1e6) return `${(n / 1e6).toFixed(n >= 1e7 ? 0 : 1)} מיליון`;
   if (n >= 1e3) return `${Math.round(n / 1e3)} אלף`;
   return String(n);
@@ -194,7 +195,7 @@ export class App {
     const portrait = this.canvas.clientHeight > this.canvas.clientWidth;
     // portrait: the ghost stands behind the tower, so frame the tower and its label column only
     if (portrait) this.world.frame(b.minX - 1.6, b.maxX + 4.2, b.top + (this.world.jackLift ? 1 : 0), true);
-    else this.world.frame(Math.min(b.minX, this.ghostX() - 2), b.maxX + 4, b.top + (this.world.jackLift ? 1 : 0), false);
+    else this.world.frame(Math.min(b.minX, this.ghostX() - 2), b.maxX + 6, b.top + (this.world.jackLift ? 1 : 0), false);
     this.world.update(dt, this.reduced);
   }
 
@@ -422,24 +423,26 @@ export class App {
       const dep = (p.departures ?? []).reduce((n, g) => n + total(Object.values(g.bands).map(Number)), 0);
       const inbound = r.towers.length > 1 ? (def.towers[1 - ti].decades[Math.min(r.decade, def.towers[1 - ti].decades.length - 1)]?.departures ?? []).filter((d) => d.toTower === ti).reduce((n, g) => n + total(Object.values(g.bands).map(Number)), 0) : 0;
       const ni = naturalIncrease(p.cbr, p.cdr);
-      const pop = r.population(ti) * def.peoplePerBlock;
+      const ppb = tp.peoplePerBlock ?? def.peoplePerBlock;
+      const pop = r.yearPopulation(ti) * ppb;
       const hideStage = !def.hints || def.goal === 'stage';
       html += `<div class="country">${tp.nameHe}</div>`;
       if (ti === 0) html += `<div class="row"><span>📅</span><span class="big">${ltr(r.year)}</span></div>`;
       html += `<div class="row"><span>👶 ילודה</span><b>${ltr(p.cbr + ' ‰')}</b></div>`;
       html += `<div class="row"><span>🕯️ תמותה</span><b>${ltr(p.cdr + ' ‰')}</b></div>`;
       if (def.hints) html += `<div class="row ni"><span>ריבוי טבעי</span><b>${ltr(`${p.cbr} − ${p.cdr} = ${ni} ‰`)}</b></div>`;
-      if (arr || dep || inbound) html += `<div class="row event"><span>🧳 הגירה</span><b>${ltr(`+${arr + inbound} / −${dep}`)}</b></div>`;
+      if (arr || dep || inbound) html += `<div class="row event"><span>🧳 הגירה</span><b>נכנסים ${ltr(arr + inbound)} · יוצאים ${ltr(dep)}</b></div>`;
       if (arr || dep || inbound) html += `<div class="row muted"><span>מאזן הגירה</span><b>${ltr((arr + inbound - dep >= 0 ? '+' : '') + (arr + inbound - dep))}</b></div>`;
       if (p.stage && !hideStage) html += `<div class="row muted"><span>שלב במעבר הדמוגרפי</span><b>${ltr(p.stage)}</b></div>`;
       html += `<div class="row muted minor"><span>תושבים</span><b>≈ ${fmtPeople(pop)}</b></div>`;
+      if (tp.peoplePerBlock) html += `<div class="row muted minor"><span>קובייה</span><b>≈ ${fmtPeople(ppb)} איש</b></div>`;
       if (p.eventHe) html += `<div class="event">${p.eventHe}</div>`;
     });
-    html += `<div class="row muted minor"><span>קובייה</span><b>≈ ${fmtPeople(def.peoplePerBlock)} איש</b></div>`;
+    if (!def.towers.some((t) => t.peoplePerBlock)) html += `<div class="row muted minor"><span>קובייה</span><b>≈ ${fmtPeople(def.peoplePerBlock)} איש</b></div>`;
     $('board-body').innerHTML = html;
     // objective
     let obj = '';
-    if (def.goal === 'exact') obj = `🎯 צלצלו בפעמון כשבמגדל בדיוק ${ltr(def.exactTarget!)} קוביות (עכשיו: ${ltr(r.totalPopulation())})`;
+    if (def.goal === 'exact') obj = `🎯 צלצלו בפעמון כשבמגדל בדיוק ${ltr(def.exactTarget!)} קוביות (ב־${ltr(r.year)}: ${ltr(r.yearPopulation())}; התינוקות והמגיעים של העשור הבא עוד לא נספרים)`;
     else obj = `🎯 הגיעו לשנת ${ltr(r.targetYear)}: המגדל עומד וכל הקומות מקבלות מענה`;
     if (r.needsChoice()) obj = `🚩 ${def.choice!.promptHe}`;
     $('objective').innerHTML = obj;
@@ -471,6 +474,8 @@ export class App {
       const sel = this.sel?.type === 'piece' && this.sel.id === p.id;
       cards.push(`<button class="card ${sel ? 'sel' : ''}" data-piece="${p.id}"><span class="ico">${icon}</span><span class="lbl">${p.labelHe}</span>${ages}<span class="count">×${p.count}</span></button>`);
     }
+    // arrivals scroll in their own strip; the build tools always stay in view
+    const pieces = cards.splice(0);
     cards.push(`<div class="card points" title="נקודות בנייה: הבוגרים בונים"><span>🔨 בנייה</span><span class="big">${r.points}</span><span class="lbl">הבוגרים בונים</span></div>`);
     for (const k of ['classroom', 'workplace', 'clinic'] as ServiceType[]) {
       const sel = this.sel?.type === 'service' && this.sel.kind === k;
@@ -479,7 +484,7 @@ export class App {
     const bsel = this.sel?.type === 'beam';
     const shaky = r.def.hints && r.towers.some((t) => stability(t, r.def.wind).margin < 0.3 && t.rows.some((row, b) => b > 0 && row.cells.length));
     cards.push(`<button class="card ${bsel ? 'sel' : ''} ${shaky && r.points > 0 ? 'glow' : ''}" data-beam="1" ${r.points <= 0 ? 'disabled' : ''}><span class="ico">${this.img('beam', '🪵')}</span><span class="lbl">קורה</span></button>`);
-    tray.innerHTML = cards.join('');
+    tray.innerHTML = `${pieces.length ? `<div class="pieces">${pieces.join('')}</div>` : ''}<div class="tools">${cards.join('')}</div>`;
     tray.querySelectorAll<HTMLButtonElement>('button.card').forEach((b) => {
       b.onpointerdown = (e) => {
         e.preventDefault();
@@ -510,6 +515,14 @@ export class App {
     } else if (s?.type === 'beam') {
       r.towers.forEach((_, ti) => doors.push({ tower: ti, band: 0, side: 'left' }, { tower: ti, band: 0, side: 'right' }));
       this.kbBand = 0;
+    } else if (s?.type === 'service') {
+      let best = -1;
+      r.towers[0].rows.forEach((row, b) => {
+        if (SERVICE_FOR[groupOf(b as Band)] !== s.kind) return;
+        const n = row.cells.filter((c) => c.kind === 'person').length;
+        if (best < 0 || n > r.towers[0].rows[best].cells.filter((c) => c.kind === 'person').length) best = b;
+      });
+      if (best >= 0) this.kbBand = best;
     }
     this.view.showDoors(doors);
     if (s?.type === 'service') this.toast(`בחרו קומה ל${SERVICE_HE[s.kind]}: לחצו על הקומה במגדל`);
@@ -684,8 +697,8 @@ export class App {
     const tg = groupOf(p.band);
     const kind = p.migrant;
     const who =
-      kind === 'labor' ? 'מהגרי עבודה מגיעים בעיקר בגיל העבודה' : kind === 'refugee' ? 'פליטים מגיעים כמשפחות שלמות, בכל הגילים' : kind === 'internal' ? 'מי שעובר מהכפר לעיר הם בעיקר צעירים' : `הקבוצה הזאת בגילי ${BANDS[p.band]}`;
-    return `"זאת לא הקומה שלנו!" ${who}. הם שייכים לקומות ה${GROUP_HE[tg]}, לא ל־${BANDS[band]}.`;
+      kind === 'labor' ? 'מהגרי עבודה מגיעים בעיקר בגיל העבודה' : kind === 'refugee' ? 'פליטים מגיעים כמשפחות שלמות, בכל הגילים' : kind === 'internal' ? 'מי שעובר מהכפר לעיר הם בעיקר צעירים' : 'כל אחד עובר לקומת הגיל שלו';
+    return `"זאת לא הקומה שלנו!" ${who}. הקבוצה הזאת בגילי ${BANDS[p.band]}, אז מקומה בקומה ${BANDS[p.band]} (קומת ה${GROUP_HE[tg]}).`;
   }
 
   /** Dock a service piece on a floor. */
@@ -709,15 +722,17 @@ export class App {
       if (a) this.pop('🤷', a);
     }
     if (r.points <= 0) this.sel = null;
-    this.afterChange();
+    this.afterChange(res === 'wasted');
   }
 
-  private afterChange(): void {
+  private afterChange(quiet = false): void {
     const r = this.run!;
     this.renderHud();
-    if (r.tray.length === 0 && r.def.hints && r.canCrank()) {
+    if (!quiet && r.tray.length === 0 && r.def.hints && r.canCrank()) {
       const unmet = r.needs().filter((n) => n.have < n.needed);
-      if (unmet.length === 0) this.toast('הכול מוכן? משכו במנוף העשור!');
+      const st = r.stability();
+      if (st.margin < NEAR_MARGIN) this.toast(`זהירות: המגדל נוטה ל${st.tipSide === 'left' ? 'שמאל' : 'ימין'} בקומה ${BANDS[st.weakBand]}. איזנו אותה או הוסיפו קורה לפני המנוף.`, 4200);
+      else if (unmet.length === 0) this.toast('הכול מוכן? משכו במנוף העשור!');
     }
   }
 
@@ -792,7 +807,7 @@ export class App {
           this.refreshGhost();
           this.renderHud();
           const died = res.deaths.reduce((n, d) => n + total(d), 0);
-          if (died && r.def.hints) this.toast(`עברו עשר שנים: כולם עלו קומה, ${died} קוביות נפרדו בשקט (תמותה)`, 3000);
+          if (died && r.def.hints) this.toast(`עברו עשר שנים: כולם עלו קומה, ${died === 1 ? 'קובייה אחת נפרדה' : `${died} קוביות נפרדו`} בשקט (תמותה)`, 3000);
         },
       },
       {
@@ -839,7 +854,17 @@ export class App {
       else if (why === 'overshoot') line = `המטרה הייתה ${r.def.exactTarget} קוביות. ריבוי טבעי חיובי מגדיל את האוכלוסייה בכל עשור.`;
       else line = r.def.choice?.explainHe ?? '';
     }
+    if (why === 'collapse' && r.towers.some((_, ti) => (r.plan(ti).arrivals ?? []).length)) {
+      // never let the arrivals look like the cause
+      line += ' המגיעים לא הפילו את המגדל: הם מוסיפים בוגרים שבונים. מה שחסר הוא איזון בין שני הצדדים של הקומות.';
+    }
     if (why === 'wrong-call' && r.def.choice && r.def.goal !== 'exact') line = r.def.choice.explainHe;
+    if (why === 'wrong-call' && r.def.goal === 'exact') {
+      // say which way the count was off, using the same number the HUD showed
+      const n = r.yearPopulation();
+      const t = r.def.exactTarget!;
+      line = n < t ? `בשנת ${ltr(r.year)} היו במגדל ${ltr(n)} קוביות, פחות מ־${ltr(t)}. ${r.def.failHe?.['wrong-call'] ?? ''}` : `בשנת ${ltr(r.year)} היו במגדל ${ltr(n)} קוביות, יותר מ־${ltr(t)}: צלצלו מוקדם יותר, לפני שהמגדל עובר את המספר.`;
+    }
     const p = this.panel(`<h2>⚠️ ${titles[why] ?? 'אוי!'}</h2><p class="why">${line}</p><div class="btns"><button class="btn" id="retry">↺ נסו שוב מהעשור הקודם</button><button class="btn plain" id="menu">מפת השלבים</button></div>`, 'fail');
     p.querySelector<HTMLButtonElement>('#retry')!.onclick = () => this.retry();
     p.querySelector<HTMLButtonElement>('#menu')!.onclick = () => this.showSelect();
@@ -891,7 +916,7 @@ export class App {
     const stars = [1, 2, 3].map((k) => `<span class="${k <= r.stars ? '' : 'off'}">⭐</span>`).join('');
     const notes = [r.nearCollapse ? 'המגדל התנדנד חזק (כמעט קרס)' : 'בלי התנודדות מסוכנת', r.mistakes || r.retries ? 'היו טעויות או ניסיונות חוזרים' : 'בלי טעויות'].join(' · ');
     const next = authored && this.levelIdx + 1 < this.levels.length;
-    const p = this.panel(`<h2>🎉 המגדל הגיע ל־${ltr(r.year)}!</h2><div class="stars">${stars}</div><p>${notes}</p><div class="btns">${next ? '<button class="btn green" id="next">לשלב הבא ▶</button>' : ''}${!authored ? '<button class="btn green" id="again">מגדל חדש ▶</button>' : ''}<button class="btn plain" id="menu">מפת השלבים</button></div>`);
+    const p = this.panel(`<h2>🎉 המגדל הגיע ל־${ltr(r.year)}!</h2><div class="stars">${stars}</div><p>${notes}</p>${r.def.choice && r.def.goal !== 'exact' ? `<p class="why">✅ ${r.def.choice.options[r.def.choice.correct].labelHe}: ${r.def.choice.explainHe}</p>` : ''}<div class="btns">${next ? '<button class="btn green" id="next">לשלב הבא ▶</button>' : ''}${!authored ? '<button class="btn green" id="again">מגדל חדש ▶</button>' : ''}<button class="btn plain" id="menu">מפת השלבים</button></div>`);
     p.querySelector<HTMLButtonElement>('#next')?.addEventListener('click', () => this.openLevel(this.levelIdx + 1));
     p.querySelector<HTMLButtonElement>('#again')?.addEventListener('click', () => {
       this.endlessSeed++;

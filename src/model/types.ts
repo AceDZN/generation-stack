@@ -97,6 +97,8 @@ export interface TowerPlan {
   silhouette?: number[];
   silhouetteLabelHe?: string;
   baseX?: number;
+  /** people per block for this tower when it differs from the level's (two countries side by side) */
+  peoplePerBlock?: number;
 }
 
 export type GoalType = 'reach' | 'exact' | 'stage' | 'choose';
