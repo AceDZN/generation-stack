@@ -12,6 +12,7 @@ import { TowerView, type DoorSpec } from './towerView.ts';
 import { Sfx } from './audio.ts';
 import { Characters } from './characters.ts';
 import { renderThumbnails, type ThumbKey } from './thumbnails.ts';
+import { GROUP_COLOR } from './textures.ts';
 import { postToHost } from '../host.ts';
 
 type Sel = { type: 'piece'; id: number } | { type: 'service'; kind: ServiceType } | { type: 'beam' } | null;
@@ -636,6 +637,8 @@ export class App {
       setTimeout(() => this.sfx.squeak(1 + Math.random() * 0.4), 180);
       if (spec.band === 0 && this.world.jackLift > 0) this.foldJack();
       this.view.sync(r.towers, { side: spec.side });
+      const at = this.view.rowAnchor(spec.tower, spec.band, spec.side);
+      if (at) this.pop(`+${p.count} ${p.kind === 'baby' ? '👶' : '👪'}`, at, GROUP_COLOR[groupOf(spec.band)]);
       this.sel = null;
       const next = r.tray[0];
       if (next) this.select({ type: 'piece', id: next.id });
