@@ -26,6 +26,7 @@ button { font-family: inherit; cursor: pointer; }
 
 #hud { position: absolute; inset: 0; pointer-events: none; }
 #hud > * { pointer-events: auto; }
+#hud > .toast { pointer-events: none; }
 
 /* top-left round buttons (mockup: dark brown, gold rim). Physical left, as in the mockups. */
 .top-left { position: absolute; top: 12px; left: 12px; display: flex; gap: 8px; direction: ltr; }
@@ -130,19 +131,20 @@ button { font-family: inherit; cursor: pointer; }
 .select .sel-top > * { pointer-events: auto; }
 .select .total { background: var(--cream); border: 3px solid var(--gold); border-radius: 14px; padding: 4px 14px; font-size: 22px; font-weight: 700; direction: ltr; }
 .select h1 { text-align: center; color: #fff; text-shadow: 0 3px 6px rgba(0,0,0,.4); margin: 0 0 10px; font-size: 34px; }
-.worlds { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; max-width: 1180px; margin: 0 auto; }
+.worlds { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; max-width: 1220px; margin: 0 auto; }
+@media (max-width: 760px) { .worlds { grid-template-columns: 1fr; } }
 .world { border-radius: 22px; padding: 14px 12px 12px; position: relative; box-shadow: 0 8px 20px rgba(0,0,0,.35); border: 4px solid rgba(255,255,255,.7); }
 .world.w1 { background: linear-gradient(160deg, #fbe7a6, #e9c96a); }
 .world.w2 { background: linear-gradient(160deg, #c9ecac, #86c46a); }
 .world.w3 { background: linear-gradient(160deg, #b8e2ff, #5ba7e6); }
 .world.w4 { background: linear-gradient(160deg, #e4d2ff, #b48cf0); }
-.ribbon { display: inline-block; margin: -30px auto 8px; padding: 6px 22px; border-radius: 10px; color: #fff; font-weight: 700; font-size: 20px; box-shadow: 0 4px 0 rgba(0,0,0,.25); position: relative; left: 50%; transform: translateX(-50%); white-space: nowrap; }
+.ribbon { display: table; margin: -30px auto 8px; padding: 6px 22px; border-radius: 10px; color: #fff; font-weight: 700; font-size: 20px; box-shadow: 0 4px 0 rgba(0,0,0,.25); position: relative; white-space: nowrap; }
 .w1 .ribbon { background: #e0a91c; }
 .w2 .ribbon { background: #3c9a3f; }
 .w3 .ribbon { background: #2f74d0; }
 .w4 .ribbon { background: #8a5ad6; }
-.nodes { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
-.node { width: 104px; border: none; background: none; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 0; }
+.nodes { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.node { width: 100px; border: none; background: none; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 0; }
 .node .mini { width: 70px; height: 56px; display: flex; flex-direction: column-reverse; align-items: center; justify-content: flex-start; }
 .node .mini i { display: block; height: 7px; border-radius: 3px; margin-top: 1px; box-shadow: 0 1px 0 rgba(0,0,0,.2); }
 .node .stone { width: 54px; height: 40px; border-radius: 50%; background: radial-gradient(circle at 50% 35%, #fbf3e0, #cdb48a); border: 3px solid #a98a5a; display: grid; place-items: center; font-weight: 700; font-size: 20px; box-shadow: 0 4px 0 #7d6440; }

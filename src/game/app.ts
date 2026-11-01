@@ -991,14 +991,20 @@ export class App {
     const ndc = new THREE.Vector2(((cx - rect.left) / rect.width) * 2 - 1, -((cy - rect.top) / rect.height) * 2 + 1);
     this.world.scene.updateMatrixWorld();
     this.ray.setFromCamera(ndc, this.world.camera);
-    // doors first: they sit in front of the floor hit boxes
+    // doors first: they sit in front of the floor hit boxes. Finger-sized hit boxes of neighbouring
+    // floors overlap, so of the doors under the tap take the one whose centre is nearest on screen.
+    let best: { spec: DoorSpec; d: number } | null = null;
     for (const h of this.ray.intersectObjects(this.view.doorObjects(), true)) {
       let o: THREE.Object3D | null = h.object;
       while (o && !o.userData.door) o = o.parent;
-      if (o) {
-        this.door(o.userData.door);
-        return;
-      }
+      if (!o) continue;
+      const c = o.getWorldPosition(new THREE.Vector3()).project(this.world.camera);
+      const d = Math.hypot(((c.x + 1) / 2) * rect.width + rect.left - cx, ((1 - c.y) / 2) * rect.height + rect.top - cy);
+      if (!best || d < best.d) best = { spec: o.userData.door, d };
+    }
+    if (best) {
+      this.door(best.spec);
+      return;
     }
     for (const h of this.ray.intersectObjects(this.view.rowObjects(), true)) {
       const row = h.object.userData.row as { tower: number; band: number; left: number; right: number } | undefined;

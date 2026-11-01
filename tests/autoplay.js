@@ -8,6 +8,9 @@ const step = (ms) => window.advanceTime(ms);
 
 function tapCanvas(x, y) {
   const c = g().canvas;
+  // tap what a finger would hit, so a HUD element covering the tower fails the run
+  const hit = document.elementFromPoint(x, y);
+  if (hit !== c) throw new Error(`tap at ${Math.round(x)},${Math.round(y)} blocked by ${hit?.id || hit?.className || hit?.tagName}`);
   const o = { bubbles: true, clientX: x, clientY: y, pointerId: 1, isPrimary: true };
   c.dispatchEvent(new PointerEvent('pointerdown', o));
   c.dispatchEvent(new PointerEvent('pointerup', o));
