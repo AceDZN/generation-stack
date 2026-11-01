@@ -8,7 +8,8 @@
 4. Pure model (demography, tower, level run, solver), then the Rapier judge calibrated against the static lever rule (289/300 random towers agree).
 5. Three.js client, HUD, tray, crank sequence, host bridge.
 6. 18 levels and the endless daily tower from the level designer; every level checked by the solver with both the static and the Rapier judge.
-7. Visual review against the mockups ([docs/VISUAL_REVIEW.md](docs/VISUAL_REVIEW.md)), an independent playtest pass ([PLAYTEST.md](PLAYTEST.md)).
+7. Visual review against the mockups ([docs/VISUAL_REVIEW.md](docs/VISUAL_REVIEW.md)), an independent playtest pass ([PLAYTEST.md](PLAYTEST.md)) and the fixes it led to.
+8. Every level re-checked in the browser through real input (`tests/autoplay.js`, Rapier judge): 18/18 won with 3 stars after the last change.
 
 ## Environment notes
 

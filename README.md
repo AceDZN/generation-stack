@@ -47,10 +47,19 @@ Implemented:
 - Real Rapier wobble playback, near-collapse warnings, gentle fading deaths, migrant arrivals by plane, boat, train and bus.
 - Stars (win, no near-collapse, clean first try), saved in `localStorage` (`generation-stack:v1`).
 - Workbook host contract, `?level=N` deep links, relative asset paths.
+- Phone portrait layout: the camera frames the tower and its labels, the target ghost stands behind the tower, and the board is compact.
+- Endless mode: one daily tower per date (seeded), the same for every player that day.
 
 Planned:
 - A 3D diorama level select (the current select is an HTML world board).
 - Voice-over for the intro lines.
+
+Known limitations:
+- Building only classrooms still wins 8 of the 18 levels with young towers, because ageing turns classrooms into workplaces. The bypass tests record this.
+- Needs are shown on each floor but counted per age group (0–19, 20–59, 60+).
+- The first piece in an empty nursery lands one cell off-centre, depending on the door.
+- The level-select preview covers some stars and always describes level 1.
+- Not yet played by real students; [PLAYTEST.md](PLAYTEST.md) is an AI tester's judgement.
 
 ## Deploy to Vercel
 
