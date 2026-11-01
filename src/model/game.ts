@@ -20,7 +20,9 @@ import {
 import { bandsOf, birthsInDecade, deathsInDecade, groupCounts, profileOf, servicesNeeded, spreadDeaths, supply, total } from './demography.ts';
 import { ageRows, buildTower, counts, insert, newId, people, removePeople, services, stability, type StabilityReport } from './tower.ts';
 
-export const NEAR_MARGIN = 0.4;
+export const NEAR_MARGIN = 0.25;
+/** a gust tilt at or above this many degrees counts as a near-collapse */
+export const NEAR_TILT_DEG = 1.5;
 export const DEFAULT_SUPPLY = 0.5;
 
 export interface Piece {
@@ -60,7 +62,7 @@ export const staticJudge: Judge = (towers, wind) => {
     worst = Math.min(worst, s.margin);
   });
   // a rough tilt from the margin, for the near-collapse star in tests
-  const maxTiltDeg = collapsed ? 90 : worst < NEAR_MARGIN ? 6 : 1;
+  const maxTiltDeg = collapsed ? 90 : worst < NEAR_MARGIN ? 2 : 0.5;
   return { collapsed, maxTiltDeg, fallenTower };
 };
 
@@ -321,7 +323,7 @@ export class LevelRun {
       this.lastCrank = { ok: false, reason, judge: j, ...base };
       return this.lastCrank;
     }
-    if (j.maxTiltDeg >= 5) this.nearCollapse = true;
+    if (j.maxTiltDeg >= NEAR_TILT_DEG) this.nearCollapse = true;
     // deaths fade, everyone ages
     const deaths: number[][] = [];
     const deathIds: number[][] = [];
