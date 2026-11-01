@@ -19,19 +19,22 @@ Deep link a level: `http://localhost:5246/?level=7`.
 
 ## Controls
 
+A line under the year counter always says the one next step (① put the newcomers in, ② build what is missing, ③ pull the crank), and the matching card or button pulses.
+
 | Action | Mouse / touch | Keyboard |
 | --- | --- | --- |
-| Pick a piece from the tray | tap a card | `1`–`9` |
-| Slide a family in | tap a glowing door at either end of a floor | `↑`/`↓` floor, `←`/`→` side, `Enter` |
-| Dock a service | pick a service card, tap a floor | pick, `↑`/`↓`, `Enter` |
-| Prop the nursery | pick the beam, tap a nursery door | pick, `Enter` |
+| Pick a group to put in | tap its card under "להכניס למגדל" (identical bundles stack into one card) | `1`–`9` |
+| Slide a group in | tap a glowing yellow arrow at either end of a floor | `↑`/`↓` floor, `←`/`→` side, `Enter` |
+| Build a classroom, workplace or clinic | one tap on its card, or on the red **+** badge beside the age group that needs it; it goes to the floor that needs it most | `1`–`9` |
+| Prop the nursery (from level 4) | pick the beam, tap a nursery arrow | pick, `Enter` |
+| Undo the last placement or build | **↶ ביטול** in the tray | `Z` / `Backspace` |
 | Pull the decade crank | the crank, bottom left | `Space` or `C` |
 | Ring the bell (exact-target levels) | the bell | `B` |
 | Orbit / zoom | drag, pinch, wheel | — |
 | Retry after a fall | panel button | `R` / `Enter` |
-| Pause, mute | top-left buttons | `Esc`/`P`, `M` |
+| Pause menu: restart the decade, level map, sound, reduced motion | ⏸ top left | `Esc`/`P` (`M` mutes) |
 
-A reduced-motion toggle (🌀) turns off the camera sway, gust amplification and the red alert pulse.
+Beside the tower, the age labels form one column and each age group (children, adults, elders) has one badge: ✓ when it has enough, or what it is missing. Above the crank, a pill says whether the tower is balanced or which way it leans. The mayor's board shows the year, the population, and the decade's births and deaths both per 1,000 and in blocks; "עוד נתונים" opens the rest.
 
 ## How it works
 
@@ -47,7 +50,7 @@ Implemented:
 - Real Rapier wobble playback, near-collapse warnings, gentle fading deaths, migrant arrivals by plane, boat, train and bus.
 - Stars (win, no near-collapse, clean first try), saved in `localStorage` (`generation-stack:v1`).
 - Workbook host contract, `?level=N` deep links, relative asset paths.
-- Phone portrait layout: the camera frames the tower and its labels, the target ghost stands behind the tower, and the board is compact.
+- Phone layouts: upright, the coach line runs across the top, the board is a small summary above the tray and the crank sits in the tray; sideways, everything shrinks and the camera lifts the tower above the tray. Two-tower levels ask an upright phone to turn sideways.
 - Endless mode: one daily tower per date (seeded), the same for every player that day.
 
 Planned:
@@ -56,9 +59,9 @@ Planned:
 
 Known limitations:
 - Building only classrooms still wins 8 of the 18 levels with young towers, because ageing turns classrooms into workplaces. The bypass tests record this.
-- Needs are shown on each floor but counted per age group (0–19, 20–59, 60+).
 - The first piece in an empty nursery lands one cell off-centre, depending on the door.
 - The level-select preview covers some stars and always describes level 1.
+- With one-tap services and the step-by-step coach the levels are easier to read but also easier to play on autopilot (PLAYTEST.md, issue 21).
 - Not yet played by real students; [PLAYTEST.md](PLAYTEST.md) is an AI tester's judgement.
 
 ## Deploy to Vercel

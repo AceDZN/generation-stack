@@ -43,6 +43,7 @@ window.autoplayLevel = (levelNumber) => {
   settle();
   const plan = solve(app.levels[idx]);
   const log = [];
+  let stackSkips = 0;
   // the mayor's question waits for the first crank, so remember the answer until it opens
   let pending = null;
   const answer = () => {
@@ -56,7 +57,12 @@ window.autoplayLevel = (levelNumber) => {
       pending = a.option;
       answer();
     } else if (a.type === 'place') {
-      if (!(app.sel && app.sel.type === 'piece' && app.sel.id === a.piece)) card(`[data-piece="${a.piece}"]`);
+      // identical bundles share one stacked card; tapping it picks its top bundle
+      if (!(app.sel && app.sel.type === 'piece' && app.sel.id === a.piece)) card(`#tray [data-pieces~="${a.piece}"]`);
+      if (app.sel?.id !== a.piece) {
+        stackSkips++;
+        app.select({ type: 'piece', id: a.piece });
+      }
       const p = app.screenOf(app.run.tray.find((q) => q.id === a.piece).tower, a.band, a.side);
       tapCanvas(p.x, p.y);
       step(50);
@@ -66,9 +72,8 @@ window.autoplayLevel = (levelNumber) => {
         const p = app.screenOf(a.tower, 0, a.side);
         tapCanvas(p.x, p.y);
       } else {
-        if (!(app.sel?.type === 'service' && app.sel.kind === a.kind)) card(`[data-service="${a.kind}"]`);
-        const p = app.screenOf(a.tower, a.band, 'mid');
-        tapCanvas(p.x, p.y);
+        // one tap on a service card docks it where its age group is missing it
+        card(`#tray [data-service="${a.kind}"]`);
       }
       step(50);
     } else if (a.type === 'crank') {
@@ -85,5 +90,5 @@ window.autoplayLevel = (levelNumber) => {
     log.push(`${a.type}:${app.run.phase}`);
     if (app.run.phase === 'failed') break;
   }
-  return { result: { passed: app.run.phase === 'won', stars: app.run.stars, reason: app.run.failReason }, log, state: JSON.parse(window.render_game_to_text()) };
+  return { result: { passed: app.run.phase === 'won', stars: app.run.stars, reason: app.run.failReason }, stackSkips, log, state: JSON.parse(window.render_game_to_text()) };
 };

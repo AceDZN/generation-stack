@@ -17,7 +17,7 @@ import {
   groupOf,
   SERVICE_FOR,
 } from './types.ts';
-import { bandsOf, birthsInDecade, deathsInDecade, groupCounts, profileOf, servicesNeeded, spreadDeaths, supply, total } from './demography.ts';
+import { bandsOf, birthsInDecade, CAPACITY, deathsInDecade, groupCounts, profileOf, servicesNeeded, spreadDeaths, supply, total } from './demography.ts';
 import { ageRows, buildTower, counts, insert, newId, people, removePeople, services, stability, type StabilityReport } from './tower.ts';
 
 export const NEAR_MARGIN = 0.25;
@@ -134,6 +134,8 @@ export class LevelRun {
   departedIds: number[][] = [];
   lastCrank: CrankResult | null = null;
   private snap: Snapshot | null = null;
+  /** the state before each placement or build this decade, newest last (for undo) */
+  private history: { towers: Tower[]; tray: Piece[]; points: number }[] = [];
   private clock: () => number;
 
   constructor(def: LevelDef, clock: () => number = () => 0) {
@@ -218,6 +220,7 @@ export class LevelRun {
     this.towers.forEach((tower) => (adults += groupCounts(counts(tower)).adult));
     for (const p of this.tray) if (p.kind === 'migrant' && groupOf(p.band) === 'adult') adults += p.count;
     this.points = supply(adults, this.def.supplyFactor ?? DEFAULT_SUPPLY);
+    this.history = [];
     this.snap = { towers: clone(this.towers), tray: clone(this.tray), points: this.points, decade: this.decade, departedIds: clone(this.departedIds) };
   }
 
@@ -243,6 +246,7 @@ export class LevelRun {
       this.record('place', { piece: piece.labelHe, band, trueBand: piece.band, side }, 'wrong-floor');
       return 'wrong-floor';
     }
+    this.remember();
     const tower = this.towers[piece.tower];
     for (let k = 0; k < piece.count; k++) {
       const cell: Cell = { kind: 'person', origin: piece.kind === 'baby' ? 'baby' : piece.migrant ?? 'native', id: newId() };
@@ -261,11 +265,13 @@ export class LevelRun {
     if (!tower) return 'invalid';
     if (kind === 'beam') {
       if (band !== 0) return 'invalid';
+      this.remember();
       insert(tower, 0, side, { kind: 'beam', id: newId() });
     } else {
       const row = tower.rows[band];
       // a floor's front face has one dock per person
       if (!row || people(row) === 0 || row.services.length >= people(row)) return 'invalid';
+      this.remember();
       row.services.push({ service: kind, id: newId() });
     }
     this.points--;
@@ -273,6 +279,58 @@ export class LevelRun {
     if (wasted) this.mistakes++;
     this.record('build', { kind, tower: towerIdx, band, side }, wasted ? 'wasted' : 'ok');
     return wasted ? 'wasted' : 'ok';
+  }
+
+  private remember(): void {
+    this.history.push({ towers: clone(this.towers), tray: clone(this.tray), points: this.points });
+  }
+
+  canUndo(): boolean {
+    return this.phase === 'place' && this.history.length > 0;
+  }
+
+  /** Take back the last placement or build of this decade. Mistakes already made still count. */
+  undo(): boolean {
+    const h = this.canUndo() ? this.history.pop() : undefined;
+    if (!h) return false;
+    this.towers = h.towers;
+    this.tray = h.tray;
+    this.points = h.points;
+    this.record('undo');
+    return true;
+  }
+
+  /**
+   * Where a service goes when the player just picks it: the tower whose matching age group is
+   * shortest of it, then that group's floor with the most people still waiting for one.
+   * Null when no group of that kind is missing the service.
+   */
+  autoDock(kind: ServiceType): { tower: number; band: Band } | null {
+    const group = (['child', 'adult', 'elder'] as Group[]).find((g) => SERVICE_FOR[g] === kind)!;
+    const short = this.needs()
+      .filter((n) => n.group === group && n.have < n.needed)
+      .sort((a, b) => b.needed - b.have - (a.needed - a.have));
+    for (const n of short) {
+      let best: { band: Band; gap: number; ppl: number } | null = null;
+      this.towers[n.tower].rows.forEach((row, b) => {
+        if (groupOf(b) !== group) return;
+        const ppl = people(row);
+        if (!ppl || row.services.length >= ppl) return;
+        const gap = Math.ceil(ppl / CAPACITY[group]) - row.services.length;
+        if (!best || gap > best.gap || (gap === best.gap && ppl > best.ppl)) best = { band: b as Band, gap, ppl };
+      });
+      if (best) return { tower: n.tower, band: (best as { band: Band }).band };
+    }
+    return null;
+  }
+
+  /** Babies and arrivals this decade per tower, and the deaths the crank will bring. */
+  decadeChange(tower = 0): { births: number; deaths: number } {
+    const plan = this.plan(tower);
+    const start = this.snap?.towers[tower] ?? this.towers[tower];
+    const births = (this.snap?.tray ?? this.tray).filter((p) => p.tower === tower && p.kind === 'baby').reduce((n, p) => n + p.count, 0);
+    const deaths = plan.deathsByBand ? total(plan.deathsByBand) : deathsInDecade(total(counts(start)) + (this.departedIds[tower]?.length ?? 0), plan);
+    return { births, deaths };
   }
 
   makeChoice(i: number): boolean {
@@ -401,6 +459,7 @@ export class LevelRun {
     this.departedIds = clone(this.snap.departedIds);
     this.phase = 'place';
     this.failReason = null;
+    this.history = [];
     if (this.decade === 0) this.choiceMade = null;
     this.retries++;
     this.attempt++;

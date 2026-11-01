@@ -12,29 +12,27 @@
       <div id="labels" aria-hidden="true"></div>
       <div id="hud" hidden>
         <div class="top-left">
-          <button class="round" id="btn-menu" title="מפת השלבים" aria-label="מפת השלבים">☰</button>
-          <button class="round" id="btn-pause" title="השהיה" aria-label="השהיה">⏸</button>
-          <button class="round" id="btn-mute" title="צליל" aria-label="צליל">🔊</button>
-          <button class="round" id="btn-motion" title="הפחתת תנועה" aria-label="הפחתת תנועה">🌀</button>
+          <button class="round" id="btn-pause" title="הפסקה ותפריט" aria-label="הפסקה ותפריט">⏸</button>
         </div>
         <div class="decades" id="decades">
           <div class="years"><bdi dir="ltr" id="yr-from">1970</bdi> <span class="arrow">←</span> <bdi dir="ltr" id="yr-to">2020</bdi></div>
           <div class="pips" id="pips"></div>
         </div>
+        <div class="coach" id="coach" role="status" aria-live="polite"><div class="step" id="coach-step"></div><div class="goal" id="coach-goal"></div></div>
         <div class="board" id="board">
           <div class="board-title">🏛️ לוח ראש העיר</div>
           <div class="board-body" id="board-body"></div>
-          <div class="stability" id="stability" hidden><span>יציבות</span><i id="stab-bar"></i><small id="stab-note"></small></div>
+          <button class="more" id="board-more" aria-expanded="false">עוד נתונים ▾</button>
         </div>
-        <div class="objective" id="objective"></div>
         <div class="tray" id="tray"></div>
         <div class="crank-wrap">
+          <div class="stab" id="stab" hidden></div>
+          <button class="bell" id="btn-bell" hidden>🔔 צלצלו בפעמון</button>
           <button class="crank" id="btn-crank" aria-label="מנוף העשור">
             <span class="lever"><span class="knob"></span></span>
             <span class="gear"></span>
             <span class="plaque">מנוף העשור</span>
           </button>
-          <button class="bell" id="btn-bell" hidden>🔔 צלצלו בפעמון</button>
         </div>
         <div class="toast" id="toast" role="status" aria-live="polite"></div>
       </div>

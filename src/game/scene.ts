@@ -211,8 +211,12 @@ export class World {
   }
 
   /** Ghost bars of the target pyramid: shares per band scaled to `total` blocks. */
+  /** top centre of the ghost silhouette (tower coordinates), for its caption */
+  ghostTop: THREE.Vector3 | null = null;
+
   setGhost(shares: number[] | undefined, total: number, x: number, z = 0): void {
     this.ghost.clear();
+    this.ghostTop = shares ? new THREE.Vector3(x, shares.length * CELL_H + 0.2, z) : null;
     if (!shares) return;
     // a glowing target outline like the mockups: group-coloured glass floors with bright cyan edges and a halo
     const edge = new THREE.LineBasicMaterial({ color: 0xe8fbff, transparent: true, opacity: 1 });
@@ -335,19 +339,20 @@ export class World {
   }
 
   /** Aim the camera at a box (the towers), keeping it fully in view. */
-  frame(minX: number, maxX: number, height: number, portrait: boolean): void {
+  frame(minX: number, maxX: number, height: number, portrait: boolean, short = false): void {
     const cx = (minX + maxX) / 2;
     const w = maxX - minX + 6;
     const h = height + 2.6;
     // a little below the middle: the HUD covers more of the top than the bottom
     // on a phone the tray, crank and objective take the bottom third, so aim lower and the tower rides higher
-    this.wantTarget.set(cx, BASE_Y + h * (portrait ? 0.22 : 0.36), 0);
+    // a short landscape screen (a phone held sideways) has the tray over the bottom quarter too
+    this.wantTarget.set(cx, BASE_Y + h * (portrait || short ? 0.22 : 0.33), 0);
     const vfov = (this.camera.fov * Math.PI) / 180;
     const hfov = 2 * Math.atan(Math.tan(vfov / 2) * this.camera.aspect);
     const dh = h / 2 / Math.tan(vfov / 2);
     const dw = w / 2 / Math.tan(hfov / 2);
     // never back out past the plaza trees and houses
-    this.wantDist = Math.min(Math.max(dh, dw) * (portrait ? 1.0 : 0.98) + 1.6, portrait ? 24 : 34);
+    this.wantDist = Math.min(Math.max(dh, dw) * (portrait ? 1.0 : short ? 1.3 : 0.98) + 1.6, portrait || short ? 44 : 34);
   }
 
   update(dt: number, reduced: boolean): void {

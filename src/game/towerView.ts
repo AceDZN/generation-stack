@@ -404,12 +404,13 @@ export class TowerView {
   }
 
   /** world anchor at the right end of a row, for HTML labels */
-  rowAnchor(tower: number, band: number, side: Side = 'right'): THREE.Vector3 | null {
+  /** A floor's end. With `column`, every floor uses the widest floor's end, so labels line up. */
+  rowAnchor(tower: number, band: number, side: Side = 'right', column = false): THREE.Vector3 | null {
     const t = this.towersCache[tower];
     if (!t) return null;
     const row = t.rows[band];
     let x: number;
-    if (row.cells.length) x = (t.baseX + (side === 'right' ? row.leftX + row.cells.length - 0.5 : row.leftX - 0.5)) * CELL_W;
+    if (row.cells.length && !column) x = (t.baseX + (side === 'right' ? row.leftX + row.cells.length - 0.5 : row.leftX - 0.5)) * CELL_W;
     else {
       // empty floor: anchor under the widest row so labels stay in a neat column
       let edge = side === 'right' ? -Infinity : Infinity;

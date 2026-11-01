@@ -15,7 +15,7 @@ import { renderThumbnails, type ThumbKey } from './thumbnails.ts';
 import { GROUP_COLOR } from './textures.ts';
 import { postToHost } from '../host.ts';
 
-type Sel = { type: 'piece'; id: number } | { type: 'service'; kind: ServiceType } | { type: 'beam' } | null;
+type Sel = { type: 'piece'; id: number } | { type: 'beam' } | null;
 interface Step {
   dur: number;
   start?: () => void;
@@ -27,6 +27,8 @@ interface Step {
 const SAVE_KEY = 'generation-stack:v1';
 const SERVICE_ICON: Record<ServiceType, string> = { classroom: '🏫', workplace: '🏭', clinic: '🏥' };
 const NEED_ICON: Record<Group, string> = { child: '📖', adult: '💼', elder: '❤️' };
+// the children's badge sits by 10–19, so the nursery's doors stay clear
+const GROUP_BANDS: Record<Group, number[]> = { child: [1], adult: [2, 3, 4, 5], elder: [6, 7] };
 const TRANSPORT_ICON = { boat: '🚢', train: '🚆', plane: '✈️', bus: '🚌' } as const;
 const $ = (id: string) => document.getElementById(id)!;
 
@@ -62,6 +64,9 @@ export class App {
   private manual = false;
   private save: Save;
   private labels: HTMLElement[] = [];
+  private badges: HTMLElement[] = [];
+  private ghostCap: HTMLElement | null = null;
+  private boardOpen = false;
   private ray = new THREE.Raycaster();
   private recording: Recording | null = null;
   private levelOpenedAt = 0;
@@ -194,8 +199,8 @@ export class App {
     const b = this.view.bounds();
     const portrait = this.canvas.clientHeight > this.canvas.clientWidth;
     // portrait: the ghost stands behind the tower, so frame the tower and its label column only
-    if (portrait) this.world.frame(b.minX - 1.6, b.maxX + 4.2, b.top + (this.world.jackLift ? 1 : 0), true);
-    else this.world.frame(Math.min(b.minX, this.ghostX() - 2), b.maxX + 6, b.top + (this.world.jackLift ? 1 : 0), false);
+    if (portrait) this.world.frame(b.minX - 1.6, b.maxX + 6, b.top + (this.world.jackLift ? 1 : 0), true);
+    else this.world.frame(Math.min(b.minX, this.ghostX() - 2), b.maxX + 6, b.top + (this.world.jackLift ? 1 : 0), false, this.canvas.clientHeight < 520);
     this.world.update(dt, this.reduced);
   }
 
@@ -414,7 +419,7 @@ export class App {
     }
     yt.textContent = String(r.targetYear);
     $('pips').innerHTML = Array.from({ length: def.decades }, (_, i) => `<i class="${i < r.decade ? 'done' : ''}"></i>`).join('');
-    // the mayor's board
+    // the mayor's board: what changes this decade, in rates and in blocks
     let html = '';
     r.towers.forEach((_, ti) => {
       const p = r.plan(ti);
@@ -425,81 +430,143 @@ export class App {
       const ni = naturalIncrease(p.cbr, p.cdr);
       const ppb = tp.peoplePerBlock ?? def.peoplePerBlock;
       const pop = r.yearPopulation(ti) * ppb;
-      const hideStage = !def.hints || def.goal === 'stage';
-      html += `<div class="country">${tp.nameHe}</div>`;
-      if (ti === 0) html += `<div class="row"><span>📅</span><span class="big">${ltr(r.year)}</span></div>`;
-      html += `<div class="row"><span>👶 ילודה</span><b>${ltr(p.cbr + ' ‰')}</b></div>`;
-      html += `<div class="row"><span>🕯️ תמותה</span><b>${ltr(p.cdr + ' ‰')}</b></div>`;
-      if (def.hints) html += `<div class="row ni"><span>ריבוי טבעי</span><b>${ltr(`${p.cbr} − ${p.cdr} = ${ni} ‰`)}</b></div>`;
+      const ch = r.decadeChange(ti);
+      const blocks = (n: number, sign: string) => `<small>${ltr(sign + n)} ${n === 1 ? 'קובייה' : 'קוביות'}</small>`;
+      html += `<div class="country"><span>${tp.nameHe}</span><b>${ltr(r.year)}</b></div>`;
+      html += `<div class="row people"><span>👥 תושבים</span><b>≈ ${fmtPeople(pop)}</b></div>`;
+      html += `<div class="row"><span>👶 ילודה</span><b>${ltr(p.cbr + '‰')}</b>${blocks(ch.births, '+')}</div>`;
+      html += `<div class="row"><span>🕯️ תמותה</span><b>${ltr(p.cdr + '‰')}</b>${blocks(ch.deaths, '−')}</div>`;
+      if (def.hints && (r.towers.length === 1 || this.boardOpen)) html += `<div class="row ni"><span>ריבוי טבעי</span><b>${ltr(`${p.cbr} − ${p.cdr} = ${ni}‰`)}</b></div>`;
       if (arr || dep || inbound) html += `<div class="row event"><span>🧳 הגירה</span><b>נכנסים ${ltr(arr + inbound)} · יוצאים ${ltr(dep)}</b></div>`;
-      if (arr || dep || inbound) html += `<div class="row muted"><span>מאזן הגירה</span><b>${ltr((arr + inbound - dep >= 0 ? '+' : '') + (arr + inbound - dep))}</b></div>`;
-      if (p.stage && !hideStage) html += `<div class="row muted"><span>שלב במעבר הדמוגרפי</span><b>${ltr(p.stage)}</b></div>`;
-      html += `<div class="row muted minor"><span>תושבים</span><b>≈ ${fmtPeople(pop)}</b></div>`;
-      if (tp.peoplePerBlock) html += `<div class="row muted minor"><span>קובייה</span><b>≈ ${fmtPeople(ppb)} איש</b></div>`;
-      if (p.eventHe) html += `<div class="event">${p.eventHe}</div>`;
+      if (this.boardOpen) {
+        if (p.stage && def.hints && def.goal !== 'stage') html += `<div class="row muted"><span>שלב במעבר הדמוגרפי</span><b>${ltr(p.stage)}</b></div>`;
+        html += `<div class="row muted"><span>קובייה אחת</span><b>≈ ${fmtPeople(ppb)} איש</b></div>`;
+        if (p.eventHe) html += `<div class="event">${p.eventHe}</div>`;
+      }
     });
-    if (!def.towers.some((t) => t.peoplePerBlock)) html += `<div class="row muted minor"><span>קובייה</span><b>≈ ${fmtPeople(def.peoplePerBlock)} איש</b></div>`;
     $('board-body').innerHTML = html;
-    // objective
-    let obj = '';
-    if (def.goal === 'exact') obj = `🎯 צלצלו בפעמון כשבמגדל בדיוק ${ltr(def.exactTarget!)} קוביות (ב־${ltr(r.year)}: ${ltr(r.yearPopulation())}; התינוקות והמגיעים של העשור הבא עוד לא נספרים)`;
-    else obj = `🎯 הגיעו לשנת ${ltr(r.targetYear)}: המגדל עומד וכל הקומות מקבלות מענה`;
-    if (r.needsChoice()) obj = `🚩 ${def.choice!.promptHe}`;
-    $('objective').innerHTML = obj;
+    $('board-more').textContent = this.boardOpen ? 'פחות ▴' : 'עוד נתונים ▾';
+    $('board-more').setAttribute('aria-expanded', String(this.boardOpen));
+    $('board').classList.toggle('open', this.boardOpen);
+    // the coach: one next step, and the level's goal under it
+    const c = this.coach();
+    $('coach-step').innerHTML = c.text;
+    $('coach').hidden = !c.text;
+    let goal = `🎯 להגיע ל־${ltr(r.targetYear)}: המגדל עומד וכל אחד מקבל מענה`;
+    if (def.goal === 'exact') goal = `🎯 לצלצל בפעמון כשבמגדל בדיוק ${ltr(def.exactTarget!)} קוביות · ב־${ltr(r.year)} יש ${ltr(r.yearPopulation())}`;
+    $('coach-goal').innerHTML = goal;
+    document.querySelectorAll('.coach-target').forEach((el) => el.classList.remove('coach-target'));
     $('btn-bell').hidden = def.goal !== 'exact';
     this.renderTray();
+    if (c.target && r.phase === 'place' && !this.animating) document.querySelectorAll(c.target).forEach((el) => el.classList.add('coach-target'));
     const crank = $('btn-crank') as HTMLButtonElement;
     const can = r.canCrank() && !this.animating;
     crank.disabled = !can && r.phase === 'place' ? false : !can;
     crank.classList.toggle('ready', can);
+    crank.classList.toggle('waiting', !can);
     crank.setAttribute('aria-disabled', String(!can));
-    // stability hint
-    const st = $('stability');
-    st.hidden = !def.hints || r.phase !== 'place';
+    // the balance pill over the crank: which way the tower leans, and where
+    const st = $('stab');
+    st.hidden = !def.hints || r.phase !== 'place' || !r.towers.some((t) => t.rows.some((row, b) => b > 0 && row.cells.length));
     if (!st.hidden) {
-      const reports = r.towers.map((t) => stability(t, def.wind));
-      const worst = reports.reduce((a, b) => (b.margin < a.margin ? b : a));
-      const m = worst.margin;
-      const v = Number.isFinite(m) ? Math.max(0, Math.min(1, (m + 0.2) / 1.6)) : 0;
-      ($('stab-bar') as HTMLElement).style.setProperty('--v', `${Math.round(v * 100)}%`);
-      // name the weak floor and the side it would tip to, so the bar is actionable
-      $('stab-note').textContent = worst.tipSide && m < NEAR_MARGIN * 2
-        ? `נוטה ל${worst.tipSide === 'left' ? 'שמאל' : 'ימין'} · קומה ${BANDS[worst.weakBand]}`
-        : 'יציב';
+      const worst = r.towers.map((t) => stability(t, def.wind)).reduce((a, b) => (b.margin < a.margin ? b : a));
+      const lean = worst.tipSide && worst.margin < NEAR_MARGIN * 2;
+      st.className = `stab ${!lean ? 'ok' : worst.margin < NEAR_MARGIN ? 'bad' : 'warn'}`;
+      st.innerHTML = lean ? `⚠️ נוטה ל${worst.tipSide === 'left' ? 'שמאל' : 'ימין'} · קומה ${ltr(BANDS[worst.weakBand])}` : '⚖️ המגדל מאוזן';
     }
+  }
+
+  /** The one thing to do next, and the control it points at. */
+  private coach(): { text: string; target?: string } {
+    const r = this.run!;
+    const def = r.def;
+    if (r.phase !== 'place') return { text: '' };
+    if (r.tray.length) {
+      const sel = this.sel;
+      const p = (sel?.type === 'piece' && r.tray.find((q) => q.id === sel.id)) || r.tray[0];
+      const left = r.tray.length === 1 ? '' : ` <small>(${ltr(r.tray.length)} בתור)</small>`;
+      const where = r.towers.length > 1 ? ` של ${def.towers[p.tower].nameHe}` : '';
+      if (p.kind === 'baby') return { text: `① הכניסו את התינוקות${where}: לחצו על חץ צהוב בקומה התחתונה${left}`, target: `[data-pieces~="${p.id}"]` };
+      if (def.migrantFloors === 'choose') return { text: `① ${p.labelHe}: באיזו קומת גיל הם? לחצו על חץ צהוב בקומה שלהם${left}`, target: `[data-pieces~="${p.id}"]` };
+      return { text: `① ${p.labelHe} נכנסים לקומה ${ltr(BANDS[p.band])}${where}: לחצו על חץ צהוב${left}`, target: `[data-pieces~="${p.id}"]` };
+    }
+    // a tower that would fall comes first: undoing a placement is easiest before building
+    const lean = (worse: number): { text: string; target?: string } | null => {
+      if (!def.hints) return null;
+      const worst = r.towers.map((t) => stability(t, def.wind)).reduce((a, b) => (b.margin < a.margin ? b : a));
+      if (!worst.tipSide || worst.margin >= worse) return null;
+      const side = worst.tipSide === 'left' ? 'שמאל' : 'ימין';
+      const beam = this.beamShown() && r.points > 0;
+      const fix = beam ? 'הוסיפו קורה בקומת התינוקות, או לחצו ↶ והכניסו מהצד השני' : 'לחצו ↶ והכניסו את הקבוצה מהצד השני';
+      return { text: `⚠️ המגדל נוטה ל${side} בקומה ${ltr(BANDS[worst.weakBand])}, הרוח תפיל אותו. ${fix}`, target: beam ? '[data-beam]' : '#undo' };
+    };
+    const falling = lean(0);
+    if (falling) return falling;
+    const short = r.needs().filter((n) => n.have < n.needed);
+    if (short.length) {
+      const n = short[0];
+      const kind = SERVICE_FOR[n.group];
+      const where = r.towers.length > 1 ? ` ב${def.towers[n.tower].nameHe}` : '';
+      if (r.points <= 0) return { text: `🔨 נגמרו נקודות הבנייה, וה${GROUP_HE[n.group]}${where} עדיין צריכים ${SERVICE_HE[kind]}. לחצו ↶ ובנו אחרת`, target: '#undo' };
+      return { text: `② ה${GROUP_HE[n.group]}${where} צריכים עוד ${SERVICE_HE[kind]}: לחצו על "${SERVICE_HE[kind]}" למטה או על ה־+ האדום`, target: `[data-service="${kind}"]` };
+    }
+    const shaky = lean(NEAR_MARGIN);
+    if (shaky) return shaky;
+    if (r.needsChoice()) return { text: '③ כולם בפנים! משכו במנוף, וראש העיר ישאל אתכם שאלה', target: '#btn-crank' };
+    if (def.goal === 'exact') return { text: `③ כולם בפנים. אם יש בדיוק ${ltr(def.exactTarget!)} קוביות צלצלו בפעמון, ואם לא משכו במנוף לעשור הבא` };
+    return { text: `③ הכול מוכן! משכו במנוף העשור, וכולם יעלו קומה`, target: '#btn-crank' };
+  }
+
+  private beamShown(): boolean {
+    const r = this.run!;
+    return r.def.id >= 4 || r.towers.some((t) => t.rows[0].cells.some((c) => c.kind === 'beam'));
   }
 
   private renderTray(): void {
     const r = this.run!;
     const tray = $('tray');
-    const cards: string[] = [];
-    // group identical pieces by label so bundles stack
+    // identical bundles (Shula's babies, one migrant group's floors) stack into one card; its top bundle goes in first
+    const stacks = new Map<string, Piece[]>();
     for (const p of r.tray) {
+      const k = `${p.tower}|${p.kind}|${p.labelHe}|${p.kind === 'baby' || r.def.migrantFloors === 'choose' ? '' : p.band}`;
+      if (!stacks.has(k)) stacks.set(k, []);
+      stacks.get(k)!.push(p);
+    }
+    const pieces: string[] = [];
+    for (const st of stacks.values()) {
+      const p = st.find((q) => this.sel?.type === 'piece' && this.sel.id === q.id) ?? st[0];
       const icon = p.kind === 'baby' ? this.img('baby', '👶') : TRANSPORT_ICON[p.transport ?? 'bus'];
       const ages = r.def.migrantFloors === 'choose' && p.kind === 'migrant' ? '' : `<span class="muted">${p.kind === 'baby' ? '0–9' : BANDS[p.band]}</span>`;
-      const sel = this.sel?.type === 'piece' && this.sel.id === p.id;
-      cards.push(`<button class="card ${sel ? 'sel' : ''}" data-piece="${p.id}"><span class="ico">${icon}</span><span class="lbl">${p.labelHe}</span>${ages}<span class="count">×${p.count}</span></button>`);
+      const owner = r.towers.length > 1 ? `<span class="muted owner">${r.def.towers[p.tower].nameHe}</span>` : '';
+      const sel = this.sel?.type === 'piece' && st.some((q) => q.id === (this.sel as { id: number }).id);
+      const more = st.length > 1 ? `<span class="more">עוד ${ltr(st.length - 1)}</span>` : '';
+      pieces.push(`<button class="card ${sel ? 'sel' : ''} ${st.length > 1 ? 'stack' : ''}" data-piece="${p.id}" data-pieces="${st.map((q) => q.id).join(' ')}"><span class="count">×${p.count}</span>${more}<span class="ico">${icon}</span><span class="lbl">${p.labelHe}</span>${owner || ages}</button>`);
     }
-    // arrivals scroll in their own strip; the build tools always stay in view
-    const pieces = cards.splice(0);
-    cards.push(`<div class="card points" title="נקודות בנייה: הבוגרים בונים"><span>🔨 בנייה</span><span class="big">${r.points}</span><span class="lbl">הבוגרים בונים</span></div>`);
+    // the tools: one tap builds a service where it is missing; the beam is placed by side
+    const needs = r.needs();
+    const tools: string[] = [];
     for (const k of ['classroom', 'workplace', 'clinic'] as ServiceType[]) {
-      const sel = this.sel?.type === 'service' && this.sel.kind === k;
-      cards.push(`<button class="card ${sel ? 'sel' : ''}" data-service="${k}" ${r.points <= 0 ? 'disabled' : ''}><span class="ico">${this.img(k, SERVICE_ICON[k])}</span><span class="lbl">${SERVICE_HE[k]}</span></button>`);
+      const short = r.phase === 'place' && needs.some((n) => SERVICE_FOR[n.group] === k && n.have < n.needed);
+      tools.push(`<button class="card ${short ? 'short' : 'idle'}" data-service="${k}" ${r.points <= 0 ? 'disabled' : ''}><span class="ico">${this.img(k, SERVICE_ICON[k])}</span><span class="lbl">${SERVICE_HE[k]}</span>${short ? '<span class="need-dot">!</span>' : ''}</button>`);
     }
-    const bsel = this.sel?.type === 'beam';
-    const shaky = r.def.hints && r.towers.some((t) => stability(t, r.def.wind).margin < 0.3 && t.rows.some((row, b) => b > 0 && row.cells.length));
-    cards.push(`<button class="card ${bsel ? 'sel' : ''} ${shaky && r.points > 0 ? 'glow' : ''}" data-beam="1" ${r.points <= 0 ? 'disabled' : ''}><span class="ico">${this.img('beam', '🪵')}</span><span class="lbl">קורה</span></button>`);
-    tray.innerHTML = `${pieces.length ? `<div class="pieces">${pieces.join('')}</div>` : ''}<div class="tools">${cards.join('')}</div>`;
+    if (this.beamShown()) {
+      const bsel = this.sel?.type === 'beam';
+      tools.push(`<button class="card ${bsel ? 'sel' : ''}" data-beam="1" ${r.points <= 0 ? 'disabled' : ''}><span class="ico">${this.img('beam', '🪵')}</span><span class="lbl">קורה</span></button>`);
+    }
+    const pts = `<span class="tlabel">🔨 לבנות · ${ltr(r.points)} ${r.points === 1 ? 'נקודה' : 'נקודות'}</span>`;
+    const undo = `<button class="undo" id="undo" title="ביטול הפעולה האחרונה (Z)" ${r.canUndo() ? '' : 'disabled'}>↶<span>ביטול</span></button>`;
+    tray.innerHTML = `${pieces.length ? `<div class="sect in"><span class="tlabel">⬇ להכניס למגדל</span><div class="pieces ${pieces.length > 3 ? 'many' : ''}">${pieces.join('')}</div></div>` : ''}<div class="sect tools">${pts}${tools.join('')}</div>${undo}`;
     tray.querySelectorAll<HTMLButtonElement>('button.card').forEach((b) => {
       b.onpointerdown = (e) => {
         e.preventDefault();
         this.sfx.unlock();
-        const s: Sel = b.dataset.piece ? { type: 'piece', id: Number(b.dataset.piece) } : b.dataset.service ? { type: 'service', kind: b.dataset.service as ServiceType } : { type: 'beam' };
+        if (b.dataset.service) return this.buildService(b.dataset.service as ServiceType);
+        const s: Sel = b.dataset.piece ? { type: 'piece', id: Number(b.dataset.piece) } : { type: 'beam' };
         this.select(s);
         this.cardDrag = s;
       };
     });
+    $('undo').onclick = () => this.undo();
   }
 
   private img(key: ThumbKey, fallback: string): string {
@@ -521,17 +588,8 @@ export class App {
     } else if (s?.type === 'beam') {
       r.towers.forEach((_, ti) => doors.push({ tower: ti, band: 0, side: 'left' }, { tower: ti, band: 0, side: 'right' }));
       this.kbBand = 0;
-    } else if (s?.type === 'service') {
-      let best = -1;
-      r.towers[0].rows.forEach((row, b) => {
-        if (SERVICE_FOR[groupOf(b as Band)] !== s.kind) return;
-        const n = row.cells.filter((c) => c.kind === 'person').length;
-        if (best < 0 || n > r.towers[0].rows[best].cells.filter((c) => c.kind === 'person').length) best = b;
-      });
-      if (best >= 0) this.kbBand = best;
     }
     this.view.showDoors(doors);
-    if (s?.type === 'service') this.toast(`בחרו קומה ל${SERVICE_HE[s.kind]}: לחצו על הקומה במגדל`);
     this.renderHud();
   }
 
@@ -558,48 +616,107 @@ export class App {
   private updateLabels(): void {
     const box = $('labels');
     const r = this.run;
-    const want = this.mode === 'play' && r ? r.towers.length * BAND_COUNT : 0;
+    const play = this.mode === 'play' && !!r;
+    const want = play ? r!.towers.length * BAND_COUNT : 0;
     while (this.labels.length < want) {
       const el = document.createElement('div');
       el.className = 'flabel';
       box.appendChild(el);
       this.labels.push(el);
     }
+    const wantB = play ? r!.towers.length * 3 : 0;
+    while (this.badges.length < wantB) {
+      const el = document.createElement('button');
+      el.className = 'gbadge';
+      el.onclick = () => el.dataset.service && this.buildService(el.dataset.service as ServiceType);
+      box.appendChild(el);
+      this.badges.push(el);
+    }
     this.labels.forEach((el, i) => (el.style.display = i < want ? '' : 'none'));
-    if (!r || this.mode !== 'play') return;
-    const needs = r.needs();
+    this.badges.forEach((el, i) => (el.style.display = i < wantB ? '' : 'none'));
+    if (!this.ghostCap) {
+      this.ghostCap = document.createElement('div');
+      this.ghostCap.className = 'ghost-cap';
+      box.appendChild(this.ghostCap);
+    }
+    const gt = play ? this.world.ghostTop : null;
+    this.ghostCap.style.display = gt ? '' : 'none';
+    if (!play) return;
+    const run = r!;
+    const needs = run.needs();
     const cam = this.world.camera;
     const W = this.canvas.clientWidth;
     const H = this.canvas.clientHeight;
-    const selPiece = this.sel?.type === 'piece' ? r.tray.find((p) => p.id === (this.sel as { id: number }).id) : null;
-    r.towers.forEach((t, ti) => {
+    const toScreen = (a: THREE.Vector3) => {
+      const v = a.clone().add(new THREE.Vector3(0, BASE_Y, 0)).project(cam);
+      return { x: ((v.x + 1) / 2) * W, y: ((1 - v.y) / 2) * H };
+    };
+    if (gt) {
+      const g = toScreen(gt);
+      this.ghostCap.textContent = `כך נראית ${run.def.towers[0].nameHe} באמת`;
+      this.ghostCap.style.left = `${g.x}px`;
+      this.ghostCap.style.top = `${g.y}px`;
+    }
+    const selPiece = this.sel?.type === 'piece' ? run.tray.find((p) => p.id === (this.sel as { id: number }).id) : null;
+    run.towers.forEach((t, ti) => {
+      // labels on each tower's right: with two towers, the first one's sit in the gap between them
+      const ys: number[] = [];
+      let colX = 0;
+      let colW = 0;
       for (let b = 0; b < BAND_COUNT; b++) {
         const el = this.labels[ti * BAND_COUNT + b];
-        const a = this.view.rowAnchor(ti, b, r.towers.length > 1 && ti === 0 ? 'left' : 'right');
+        const a = this.view.rowAnchor(ti, b, 'right', true);
         if (!a) continue;
-        a.y += BASE_Y;
-        a.x += r.towers.length > 1 && ti === 0 ? -0.3 : 0.3;
-        const v = a.project(cam);
+        a.x += 0.3;
+        const { x, y } = toScreen(a);
         const g = groupOf(b);
-        const n = needs.find((q) => q.tower === ti && q.group === g)!;
-        const ppl = t.rows[b].cells.filter((c) => c.kind === 'person').length;
-        const ok = n.have >= n.needed;
-        const showCount = r.def.hints;
-        const key = `${BANDS[b]}|${ok}|${ppl}|${n.have}/${n.needed}|${showCount}`;
+        const key = `${BANDS[b]}|${g}`;
         if (el.dataset.k !== key) {
           el.dataset.k = key;
-          el.innerHTML =
-            (r.towers.length > 1 && ti === 0 ? '' : '') +
-            `<span class="band">${BANDS[b]}</span><span class="need" title="${GROUP_HE[g]}">${NEED_ICON[g]}</span>` +
-            (ppl || n.needed ? `<span class="${ok ? 'ok' : 'bad'}">${ok ? '✓' : '✗'}</span>` : '') +
-            (showCount && ppl ? `<span class="cnt">${ppl}👤</span>` : '');
+          el.className = `flabel ${g}`;
+          el.innerHTML = `<span class="band">${BANDS[b]}</span>`;
         }
-        el.classList.toggle('target', !!selPiece && selPiece.tower === ti && r.allowedBands(selPiece).includes(b) && r.def.migrantFloors !== 'choose');
-        const x = ((v.x + 1) / 2) * W;
-        const y = ((1 - v.y) / 2) * H;
-        el.style.left = `${r.towers.length > 1 && ti === 0 ? x - el.offsetWidth : x}px`;
+        el.classList.toggle('target', !!selPiece && selPiece.tower === ti && run.allowedBands(selPiece).includes(b) && run.def.migrantFloors !== 'choose');
+        el.classList.toggle('empty', !t.rows[b].cells.length);
+        colW = el.offsetWidth;
+        colX = x;
+        el.style.left = `${colX}px`;
         el.style.top = `${y}px`;
+        ys[b] = y;
       }
+      // one badge per age group, beside its floors: who needs what, and how much is there
+      (['child', 'adult', 'elder'] as Group[]).forEach((g, gi) => {
+        const el = this.badges[ti * 3 + gi];
+        const n = needs.find((q) => q.tower === ti && q.group === g)!;
+        const bands = GROUP_BANDS[g];
+        if ((!n.people && !n.have) || run.phase === 'won') {
+          el.style.display = 'none';
+          return;
+        }
+        const kind = SERVICE_FOR[g];
+        const ok = n.have >= n.needed;
+        const key = `${g}|${n.have}/${n.needed}|${ok}`;
+        if (el.dataset.k !== key) {
+          el.dataset.k = key;
+          el.dataset.service = ok ? '' : kind;
+          el.className = `gbadge ${g} ${ok ? 'ok' : 'bad'} ${run.towers.length > 1 ? 'compact' : ''}`;
+          el.title = ok ? `ל${GROUP_HE[g]} יש מספיק ${SERVICE_HE[kind]}` : `לחצו כדי לבנות ${SERVICE_HE[kind]}`;
+          el.innerHTML = `<span class="gname">${GROUP_HE[g]}</span><span class="gico">${NEED_ICON[g]}</span>${ok ? '' : `<span class="gneed">חסר${kind === 'workplace' ? '' : 'ה'} ${SERVICE_HE[kind]}</span><bdi dir="ltr">${n.have}/${n.needed}</bdi>`}<span class="gmark">${ok ? '✓' : '+'}</span>`;
+        }
+        const top = Math.min(...bands.map((b) => ys[b]));
+        const bottom = Math.max(...bands.map((b) => ys[b]));
+        el.style.top = `${(top + bottom) / 2}px`;
+        el.style.setProperty('--span', `${g === 'child' ? Math.abs(ys[0] - ys[1]) * 2 + 18 : Math.max(18, bottom - top + 18)}px`);
+        if (g === 'child') el.style.setProperty('--shift', `${(ys[0] - ys[1]) / 2}px`);
+        // with two towers the first one's badges stand on its outer side, so the gap keeps only labels and doors
+        const outer = run.towers.length > 1 && ti === 0;
+        el.classList.toggle('flip', outer);
+        if (outer) {
+          const edge = this.view.rowAnchor(ti, bands[0], 'left', true);
+          const ex = edge ? toScreen(edge.add(new THREE.Vector3(-1.4, 0, 0))).x : colX;
+          el.style.left = `${Math.max(4, ex - 8 - el.offsetWidth)}px`;
+        } else el.style.left = `${Math.min(colX + colW + 8, W - el.offsetWidth - 4)}px`;
+      });
     });
   }
 
@@ -627,6 +744,7 @@ export class App {
       // a flag question waits until the first crank, so the tower can be read first
       this.decadeArrivals();
       if (this.run!.needsChoice()) this.toast('לפני המנוף ראש העיר ישאל אתכם שאלה: הסתכלו טוב על המגדל', 4200);
+      else if (this.run!.towers.length > 1 && this.canvas.clientHeight > this.canvas.clientWidth) this.toast('🔄 סובבו את הטלפון לרוחב כדי לראות את שני המגדלים', 5000);
     };
   }
 
@@ -653,8 +771,12 @@ export class App {
     const migrants = r.tray.filter((p) => p.kind === 'migrant');
     if (babies) this.queue({ dur: this.reduced ? 0.2 : 1.6, start: () => { this.chars.shulaDeliver(); this.sfx.flap(); } });
     for (const m of migrants.slice(0, 3)) this.queue({ dur: this.reduced ? 0.1 : 0.9, start: () => this.chars.vehicle(m.transport ?? 'bus', m.tower) });
-    this.queue({ dur: 0.01, end: () => this.renderHud() });
-    if (r.tray.length === 0 && r.def.hints) this.toast('אין תינוקות או מהגרים בעשור הזה. אפשר לבנות ולמשוך במנוף');
+    const ev = r.towers.map((_, ti) => r.plan(ti).eventHe).filter(Boolean).join(' · ');
+    this.queue({ dur: 0.01, end: () => {
+      this.renderHud();
+      if (ev) this.toast(`📰 ${ev}`, 5000);
+    } });
+    if (r.tray.length === 0 && r.def.hints && !ev) this.toast('אין תינוקות או מהגרים בעשור הזה. אפשר לבנות ולמשוך במנוף');
   }
 
   // ---------- actions ----------
@@ -708,39 +830,50 @@ export class App {
     return `"זאת לא הקומה שלנו!" ${who}. הקבוצה הזאת בגילי ${BANDS[p.band]}, אז מקומה בקומה ${BANDS[p.band]} (קומת ה${GROUP_HE[tg]}).`;
   }
 
-  /** Dock a service piece on a floor. */
-  floor(tower: number, band: number): void {
+  /** One tap on a service: it docks where its age group is missing it. */
+  buildService(kind: ServiceType): void {
     const r = this.run;
-    if (!r || this.sel?.type !== 'service' || this.animating) return;
-    const kind = this.sel.kind;
-    const res = r.build(kind, tower, band, 'right');
-    if (res === 'invalid') {
+    if (!r || r.phase !== 'place' || this.animating || !$('panel').hidden) return;
+    if (r.points <= 0) {
       this.sfx.oops();
-      this.toast('אין מקום לעוד שירות בקומה הזאת');
+      this.toast('נגמרו נקודות הבנייה לעשור הזה. אפשר ללחוץ ↶ כדי לבטל בנייה אחרת');
       return;
     }
-    if (res === 'no-points') return;
+    const d = r.autoDock(kind);
+    if (!d) {
+      this.sfx.oops();
+      const g = (['child', 'adult', 'elder'] as Group[]).find((q) => SERVICE_FOR[q] === kind)!;
+      this.toast(`ל${GROUP_HE[g]} כבר יש מספיק. ${SERVICE_HE[kind]} עכשיו לא תעזור לאף אחד`);
+      return;
+    }
+    if (r.build(kind, d.tower, d.band, 'right') !== 'ok') return;
     this.sfx.thunk();
     this.view.sync(r.towers, { drop: true });
-    if (res === 'wasted') {
-      const g = groupOf(band);
-      this.toast(`ה${GROUP_HE[g]} בקומה ${BANDS[band]} לא צריכים ${SERVICE_HE[kind]}: הם צריכים ${SERVICE_HE[SERVICE_FOR[g]]}`, 4200);
-      const a = this.view.rowAnchor(tower, band);
-      if (a) this.pop('🤷', a);
+    const a = this.view.rowAnchor(d.tower, d.band);
+    if (a) this.pop(`+${SERVICE_ICON[kind]}`, a, GROUP_COLOR[groupOf(d.band)]);
+    if (this.sel?.type === 'beam' && r.points <= 0) {
+      this.sel = null;
+      this.view.showDoors([]);
     }
-    if (r.points <= 0) this.sel = null;
-    this.afterChange(res === 'wasted');
+    this.afterChange();
   }
 
-  private afterChange(quiet = false): void {
-    const r = this.run!;
+  /** Take back the last placement or build of this decade. */
+  undo(): void {
+    const r = this.run;
+    if (!r || this.animating || !$('panel').hidden || !r.undo()) return;
+    this.sfx.click();
+    this.view.sync(r.towers, {});
+    this.world.jackTarget = r.towers.some((t) => t.rows[0].cells.length === 0 && t.rows.some((row, b) => b > 0 && row.cells.length)) ? 1 : 0;
+    this.sel = null;
+    if (r.tray.length) this.select({ type: 'piece', id: r.tray[0].id });
+    else this.view.showDoors([]);
+    this.toast('בוטל ↶', 1200);
     this.renderHud();
-    if (!quiet && r.tray.length === 0 && r.def.hints && r.canCrank()) {
-      const unmet = r.needs().filter((n) => n.have < n.needed);
-      const st = r.stability();
-      if (st.margin < NEAR_MARGIN) this.toast(`זהירות: המגדל נוטה ל${st.tipSide === 'left' ? 'שמאל' : 'ימין'} בקומה ${BANDS[st.weakBand]}. איזנו אותה או הוסיפו קורה לפני המנוף.`, 4200);
-      else if (unmet.length === 0) this.toast('הכול מוכן? משכו במנוף העשור!');
-    }
+  }
+
+  private afterChange(): void {
+    this.renderHud();
   }
 
   private foldJack(): void {
@@ -936,21 +1069,63 @@ export class App {
     this.paused = p;
     $('btn-pause').setAttribute('aria-pressed', String(p));
     $('btn-pause').textContent = p ? '▶' : '⏸';
-    let veil = document.querySelector('.paused-veil');
-    if (p && !veil && this.mode === 'play') {
-      veil = document.createElement('div');
-      veil.className = 'paused-veil';
-      $('app').appendChild(veil);
-      (veil as HTMLElement).onclick = () => this.setPaused(false);
-      this.sfx.wind(false);
-    } else if (!p) veil?.remove();
+    document.querySelector('.paused-veil')?.remove();
+    if (!p || this.mode !== 'play') return;
+    this.sfx.wind(false);
+    // the pause menu holds the rarely used buttons, so the play screen stays clear
+    const veil = document.createElement('div');
+    veil.className = 'paused-veil';
+    const r = this.run;
+    const canRestart = !!r && r.phase === 'place' && r.canUndo();
+    veil.innerHTML = `<div class="pause-menu" role="dialog" aria-label="הפסקה"><h2>⏸ הפסקה</h2>
+      <button class="btn green" data-a="resume">▶ המשך לשחק</button>
+      ${canRestart ? '<button class="btn plain" data-a="restart">↺ להתחיל את העשור מחדש</button>' : ''}
+      <button class="btn plain" data-a="map">🗺️ מפת השלבים</button>
+      <div class="row"><button class="btn plain" data-a="mute">${this.sfx.muted ? '🔇 צליל כבוי' : '🔊 צליל פועל'}</button><button class="btn plain" data-a="motion">${this.reduced ? '🌀 תנועה מופחתת' : '🌀 תנועה מלאה'}</button></div></div>`;
+    $('app').appendChild(veil);
+    veil.addEventListener('click', (e) => {
+      const a = (e.target as HTMLElement).closest<HTMLElement>('[data-a]')?.dataset.a;
+      if (e.target === veil || a === 'resume') return this.setPaused(false);
+      if (a === 'map') {
+        this.setPaused(false);
+        return this.showSelect();
+      }
+      if (a === 'restart') {
+        while (this.run?.undo());
+        this.setPaused(false);
+        this.undoneAll();
+        return;
+      }
+      if (a === 'mute') this.toggleMute();
+      if (a === 'motion') this.toggleMotion();
+      this.setPaused(true);
+    });
+  }
+
+  private undoneAll(): void {
+    const r = this.run!;
+    this.view.sync(r.towers, {});
+    this.world.jackTarget = r.towers.some((t) => t.rows[0].cells.length === 0 && t.rows.some((row, b) => b > 0 && row.cells.length)) ? 1 : 0;
+    this.sel = null;
+    if (r.tray.length) this.select({ type: 'piece', id: r.tray[0].id });
+    this.toast('העשור מתחיל מחדש', 1600);
+    this.renderHud();
   }
 
   toggleMute(): void {
     this.sfx.setMuted(!this.sfx.muted);
-    $('btn-mute').textContent = this.sfx.muted ? '🔇' : '🔊';
     try {
       localStorage.setItem('generation-stack:muted', this.sfx.muted ? '1' : '0');
+    } catch {
+      /* ignore */
+    }
+  }
+
+  toggleMotion(): void {
+    this.reduced = !this.reduced;
+    this.view.reduced = this.reduced;
+    try {
+      localStorage.setItem('generation-stack:reduced', this.reduced ? '1' : '0');
     } catch {
       /* ignore */
     }
@@ -982,21 +1157,10 @@ export class App {
     $('btn-crank').onclick = () => this.crank();
     $('btn-bell').onclick = () => this.ringBell();
     $('btn-pause').onclick = () => this.setPaused(!this.paused);
-    $('btn-mute').onclick = () => this.toggleMute();
-    $('btn-menu').onclick = () => this.showSelect();
-    $('btn-motion').onclick = () => {
-      this.reduced = !this.reduced;
-      this.view.reduced = this.reduced;
-      $('btn-motion').setAttribute('aria-pressed', String(this.reduced));
-      try {
-        localStorage.setItem('generation-stack:reduced', this.reduced ? '1' : '0');
-      } catch {
-        /* ignore */
-      }
-      this.toast(this.reduced ? 'תנועה מופחתת: פועל' : 'תנועה מופחתת: כבוי');
+    $('board-more').onclick = () => {
+      this.boardOpen = !this.boardOpen;
+      this.renderHud();
     };
-    $('btn-motion').setAttribute('aria-pressed', String(this.reduced));
-    $('btn-mute').textContent = this.sfx.muted ? '🔇' : '🔊';
     const c = this.canvas;
     window.addEventListener('pointerdown', () => (this.interacted = true), { capture: true });
     c.addEventListener('pointerdown', (e) => {
@@ -1078,10 +1242,6 @@ export class App {
     for (const h of this.ray.intersectObjects(this.view.rowObjects(), true)) {
       const row = h.object.userData.row as { tower: number; band: number; left: number; right: number } | undefined;
       if (!row || !this.sel) continue;
-      if (this.sel.type === 'service') {
-        this.floor(row.tower, row.band);
-        return;
-      }
       // tapping a floor's half with a piece selected = that floor's door on that side
       const local = this.view.group.worldToLocal(h.point.clone());
       const side: Side = local.x > (row.left + row.right) / 2 ? 'right' : 'left';
@@ -1100,7 +1260,10 @@ export class App {
     if (this.mode !== 'play' || !this.run) return;
     const r = this.run;
     if (e.key === 'Escape' || e.key === 'p') return this.setPaused(!this.paused);
-    if (e.key === 'm') return this.toggleMute();
+    if (e.key === 'm') {
+      this.toggleMute();
+      return this.toast(this.sfx.muted ? '🔇 צליל כבוי' : '🔊 צליל פועל', 1000);
+    }
     if (this.paused) return;
     if (r.phase === 'failed' && (e.key === 'r' || e.key === 'Enter')) return this.retry();
     if (!$('panel').hidden) {
@@ -1113,6 +1276,7 @@ export class App {
       return this.crank();
     }
     if (e.key === 'b') return this.ringBell();
+    if (e.key === 'z' || e.key === 'Backspace') return this.undo();
     const n = Number(e.key);
     if (n >= 1 && n <= 9) {
       const cards = [...document.querySelectorAll<HTMLButtonElement>('#tray button.card:not(:disabled)')];
@@ -1130,8 +1294,7 @@ export class App {
       e.preventDefault();
     }
     if (e.key === 'Enter') {
-      if (this.sel?.type === 'service') this.floor(0, this.kbBand);
-      else if (this.sel) this.door({ tower: this.sel.type === 'piece' ? r.tray.find((p) => p.id === (this.sel as { id: number }).id)?.tower ?? 0 : 0, band: this.sel.type === 'beam' ? 0 : this.kbBand, side: this.kbSide });
+      if (this.sel) this.door({ tower: this.sel.type === 'piece' ? r.tray.find((p) => p.id === (this.sel as { id: number }).id)?.tower ?? 0 : 0, band: this.sel.type === 'beam' ? 0 : this.kbBand, side: this.kbSide });
     }
   }
 

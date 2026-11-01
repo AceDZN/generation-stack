@@ -50,11 +50,11 @@ Clarity:
 | # | Issue | Status |
 | --- | --- | --- |
 | 12 | Hebrew fixes (singular death line, העשור, מיליארד, קוביות, migration "+3 / −0", Shula not introduced) | ✅ Fixed. Migration reads "נכנסים X · יוצאים Y"; L1 introduces "שולה החסידה" |
-| 13 | Needs are shown per floor but counted per age group | ⚠️ Open, documented |
+| 13 | Needs are shown per floor but counted per age group | ✅ Fixed in the HUD simplification. One badge per age group, beside its floors |
 | 14 | The L5 question came before its evidence | ✅ Fixed. Place the babies first, then answer at the crank |
 | 15 | No lean indicator | ✅ Fixed. A note under the stability bar names the side and floor ("נוטה לשמאל · קומה 0–9") |
 | 16 | Win panels don't teach | ⚠️ Partly fixed. Choice levels now reveal the answer; no population recap yet |
-| 17 | Two-tower tray cards don't say which country | ⚠️ Open (the doors light up only on the right tower) |
+| 17 | Two-tower tray cards don't say which country | ✅ Fixed. Each card names its country |
 | 18 | Decade counter direction in RTL | ➖ Not changed. The counter already reads right to left (this year on the right, ← towards the target); the dashes were the year-flip animation caught mid-way. At the end it shows the target year twice |
 | 19 | Camera framing (70+ under the board, L9 edges, huge ghost) | ⚠️ Partly fixed. The camera target and distance were retuned and a phone layout was added; L9 at 1024×768 was not re-checked |
 | 20 | Level select info box | ⚠️ Open |
@@ -63,9 +63,22 @@ Feel:
 
 | # | Note | Status |
 | --- | --- | --- |
-| 21 | After L2 the loop runs on autopilot because the HUD does the arithmetic | ⚠️ Open. The biggest design question left |
+| 21 | After L2 the loop runs on autopilot because the HUD does the arithmetic | ⚠️ Open, and the HUD simplification below makes it easier still. The biggest design question left |
 | 22 | Collapses are the most fun moment, but they came from things the player couldn't see | ✅ Improved by the lean note and the warning toast |
 | 23 | The stork's arrival gates the first selection | ✅ Fixed. The first piece is picked automatically each decade |
+
+## After the playtest: HUD simplification
+
+Following feedback that the screen was crowded and hard to read, the HUD was simplified without changing the art:
+
+- A coach line under the year counter gives one next step at a time and makes the matching control pulse.
+- Per-floor ✓/✗ icons and head counts were replaced by an aligned column of age labels and one need badge per age group; a red badge builds the missing service on tap.
+- Services are one tap (they dock on the floor of their group that needs them most). The beam card appears from level 4.
+- An undo button takes back the last placement or build; the pause menu can restart the decade.
+- The mayor's board shows births and deaths in blocks as well as per 1,000; the stage, block size and news moved behind "עוד נתונים" or into a toast.
+- Sound, reduced motion and the level map moved into the pause menu, leaving one round button.
+
+All 18 levels were re-run through real input at 1280×720, 1024×768 and 812×375 (18/18 with 3 stars each) and at 375×812 (16/18; the two two-tower levels need the phone sideways and say so).
 
 ## The tester's verdict (AI judgement, not measured)
 

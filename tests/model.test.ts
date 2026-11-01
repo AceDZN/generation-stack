@@ -126,3 +126,44 @@ test('the bell judges the population of the year on the counter, before or after
   assert.ok(run.totalPopulation() >= L.exactTarget!);
   assert.equal(run.ringBell(), true);
 });
+
+test('undo takes back the last placement or build of the decade, but not a mistake', async () => {
+  const { LEVELS } = await import('../src/model/levels.ts');
+  const run = new LevelRun(LEVELS[0]);
+  const before = JSON.stringify(run.towers);
+  const trayBefore = run.tray.length;
+  assert.equal(run.canUndo(), false);
+  const p = run.tray[0];
+  assert.equal(run.place(p.id, 0, 'right'), 'ok');
+  const pts = run.points;
+  const dock = run.autoDock('classroom');
+  assert.ok(dock);
+  run.build('clinic', 0, 0, 'right'); // wasted: a clinic on the nursery
+  assert.equal(run.mistakes, 1);
+  assert.equal(run.undo(), true);
+  assert.equal(run.points, pts);
+  assert.equal(run.mistakes, 1);
+  assert.equal(run.undo(), true);
+  assert.equal(run.tray.length, trayBefore);
+  assert.equal(JSON.stringify(run.towers), before);
+  assert.equal(run.undo(), false);
+});
+
+test('a picked service docks on the floor of its age group that is shortest of it', async () => {
+  const { LEVELS } = await import('../src/model/levels.ts');
+  const run = new LevelRun(LEVELS[1]);
+  for (const p of [...run.tray]) run.place(p.id, 0, p.id % 2 ? 'left' : 'right');
+  const need = run.needs().find((n) => n.group === 'child')!;
+  assert.ok(need.have < need.needed);
+  let built = 0;
+  for (let d = run.autoDock('classroom'); d && run.points > 0; d = run.autoDock('classroom')) {
+    assert.ok(d.band <= 1);
+    assert.equal(run.build('classroom', d.tower, d.band, 'right'), 'ok');
+    built++;
+  }
+  const after = run.needs().find((n) => n.group === 'child')!;
+  assert.ok(after.have >= after.needed || run.points === 0);
+  assert.equal(built, Math.min(need.needed - need.have, built));
+  // nothing is missing any more, so there is nowhere to put another classroom
+  if (after.have >= after.needed) assert.equal(run.autoDock('classroom'), null);
+});
