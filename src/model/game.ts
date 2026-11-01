@@ -343,16 +343,20 @@ export class LevelRun {
     const res: CrankResult = { ok: true, judge: j, needs, deaths, deathIds, dismantledIds, yearFrom, yearTo: this.year };
     this.lastCrank = res;
     const exact = this.def.goal === 'exact';
+    // test what the bell would see: next decade's departures have already left
+    const decadeStart = this.snap;
+    if (exact && this.decade < this.def.decades) this.beginDecade();
     const over = exact && this.totalPopulation() > (this.def.exactTarget ?? Infinity);
     if (over || (exact && this.decade >= this.def.decades && this.totalPopulation() !== this.def.exactTarget)) {
-      // cranked past the mayor's number: retry this decade (the snapshot is still its start)
+      // cranked past the mayor's number: retry this decade from its start
+      this.snap = decadeStart;
       this.mistakes++;
       this.phase = 'failed';
       this.failReason = 'overshoot';
       res.ok = false;
       res.reason = 'overshoot';
     } else if (this.decade >= this.def.decades && !exact) this.win();
-    else this.beginDecade();
+    else if (!exact) this.beginDecade();
     return res;
   }
 

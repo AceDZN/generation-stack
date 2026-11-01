@@ -4,8 +4,9 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
-import { plazaTexture, skyTexture } from './textures.ts';
+import { GROUP_COLOR, plazaTexture, skyTexture } from './textures.ts';
 import { CELL_H, CELL_W } from '../model/tower.ts';
+import { groupOf } from '../model/types.ts';
 
 export const BASE_Y = 0.55; // top of the turntable, where the nursery floor stands
 
@@ -60,7 +61,7 @@ export class World {
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.camera = new THREE.PerspectiveCamera(38, 16 / 9, 0.1, 400);
     this.scene.background = skyTexture();
-    this.scene.fog = new THREE.Fog(0xf4dfc0, 45, 120);
+    this.scene.fog = new THREE.Fog(0xf4dfc0, 60, 140);
 
     const hemi = new THREE.HemisphereLight(0xcfe8ff, 0xc9a77a, 1.15);
     this.scene.add(hemi);
@@ -212,16 +213,21 @@ export class World {
   setGhost(shares: number[] | undefined, total: number, x: number): void {
     this.ghost.clear();
     if (!shares) return;
-    const mat = new THREE.MeshBasicMaterial({ color: 0x7fd0ff, transparent: true, opacity: 0.22, depthWrite: false });
-    const edge = new THREE.LineBasicMaterial({ color: 0xbff0ff, transparent: true, opacity: 0.9 });
+    // a glowing target outline like the mockups: group-coloured glass floors with bright cyan edges and a halo
+    const edge = new THREE.LineBasicMaterial({ color: 0xe8fbff, transparent: true, opacity: 1 });
+    const halo = new THREE.MeshBasicMaterial({ color: 0x1f78d8, transparent: true, opacity: 0.38, depthWrite: false });
     shares.forEach((sh, b) => {
       const w = Math.max(0.2, sh * total) * CELL_W;
-      const geo = new THREE.BoxGeometry(w, CELL_H * 0.92, 0.8);
-      const m = new THREE.Mesh(geo, mat);
-      m.position.set(x, b * CELL_H + CELL_H / 2, 0);
+      const y = b * CELL_H + CELL_H / 2;
+      const geo = new THREE.BoxGeometry(w, CELL_H * 0.9, 0.7);
+      const fill = new THREE.MeshBasicMaterial({ color: new THREE.Color(GROUP_COLOR[groupOf(b)]).lerp(new THREE.Color(0x9fe4ff), 0.35), transparent: true, opacity: 0.55, depthWrite: false });
+      const m = new THREE.Mesh(geo, fill);
+      m.position.set(x, y, 0);
       const e = new THREE.LineSegments(new THREE.EdgesGeometry(geo), edge);
       e.position.copy(m.position);
-      this.ghost.add(m, e);
+      const h = new THREE.Mesh(new THREE.PlaneGeometry(w + 0.3, CELL_H + 0.02), halo);
+      h.position.set(x, y, -0.4);
+      this.ghost.add(h, m, e);
     });
   }
 
