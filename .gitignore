@@ -1,0 +1,15 @@
+node_modules
+dist
+output
+test-results
+playwright-report
+.DS_Store
+*.log
+scratch/
+assets-src/
+
+# Screenshots never go in the repo; design mockups and the Workbook poster are the exceptions.
+*.png
+*.jpg
+!docs/visual-targets/*.png
+!workbook/poster.jpg
