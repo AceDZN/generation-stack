@@ -63,7 +63,7 @@ export const LEVELS: LevelDef[] = [
     goal: 'reach',
     peoplePerBlock: 1400000,
     wind: 0,
-    supplyFactor: 0.5,
+    supplyFactor: 0.3,
     hints: true,
     failHe: {
       needs: 'לילדים חסרו כיתות. כל כיתה מחזיקה 3 ילדים: ספרו את הילדים, חלקו ב-3 ועגלו למעלה.',
@@ -92,7 +92,7 @@ export const LEVELS: LevelDef[] = [
     goal: 'reach',
     peoplePerBlock: 450000,
     wind: 0.1,
-    supplyFactor: 0.5,
+    supplyFactor: 0.35,
     hints: true,
     failHe: {
       needs: 'בכל עשור נולדו יותר תינוקות, כי התמותה ירדה והילודה לא. ריבוי טבעי = ילודה − תמותה: ככל שהפער גדל, צריך יותר כיתות.',
@@ -116,7 +116,7 @@ export const LEVELS: LevelDef[] = [
     exactTarget: 28,
     peoplePerBlock: 43000000,
     wind: 0.1,
-    supplyFactor: 0.45,
+    supplyFactor: 0.3,
     hints: true,
     failHe: {
       overshoot: 'המנוף עבר את היעד. חשבו מראש: בכל עשור נוסף בערך (ילודה − תמותה) × 10 לכל 1000, כלומר כחמישית מהמגדל.',
@@ -137,7 +137,7 @@ export const LEVELS: LevelDef[] = [
     startYear: 1950,
     decades: 4,
     towers: [
-      tower('מדינת המודל', 'mali', 1950, 16, [
+      tower('מדינת המודל', 'kenya', 1950, 18, [
         given(51, 35, { stage: 1, mortality: 'high', eventHe: 'שלב 1: הרבה לידות והרבה פטירות (כמו במאלי ב-1950)' }),
         given(WORKBOOK.niger.cbr, WORKBOOK.niger.cdr, { stage: 2, eventHe: 'שלב 2: רפואה ותזונה מורידות את התמותה (כמו בניז\'ר היום)' }),
         given(WORKBOOK.israel.cbr, WORKBOOK.israel.cdr, { stage: 3, eventHe: 'שלב 3: משפחות קטנות יותר, הילודה יורדת (כמו בישראל היום)' }),
@@ -147,7 +147,7 @@ export const LEVELS: LevelDef[] = [
     goal: 'reach',
     peoplePerBlock: 300000,
     wind: 0.15,
-    supplyFactor: 0.5,
+    supplyFactor: 0.4,
     hints: true,
     failHe: {
       collapse: 'בשלב 4 נולדים מעט תינוקות והבסיס צר. קורות בקומת התינוקות מרחיבות אותו.',
@@ -173,7 +173,7 @@ export const LEVELS: LevelDef[] = [
     },
     peoplePerBlock: 4000000,
     wind: 0.15,
-    supplyFactor: 0.45,
+    supplyFactor: 0.25,
     hints: false,
     failHe: {
       'wrong-call': 'בשלב 2 הילודה עדיין 30 ומעלה, ובשלב 4 גם הילודה נמוכה. כאן הילודה 22 והתמותה 6: הילודה כבר יורדת, אבל עדיין גבוהה מהתמותה.',
@@ -199,7 +199,7 @@ export const LEVELS: LevelDef[] = [
     goal: 'reach',
     peoplePerBlock: 1500000,
     wind: 0.15,
-    supplyFactor: 0.5,
+    supplyFactor: 0.4,
     hints: true,
     failHe: {
       needs: 'רוב המגדל ילדים, ולכל 3 ילדים צריך כיתה. כשבונים מקומות עבודה לפני הכיתות, נגמרות נקודות הבנייה.',
@@ -216,13 +216,13 @@ export const LEVELS: LevelDef[] = [
       'הבסיס צר והגג כבד. קורות בקומת התינוקות עוזרות לבסיס להחזיק.',
       'וקשישים צריכים מרפאות: כל מרפאה מטפלת רק ב-2.',
     ],
-    startYear: 1990,
-    decades: 3,
-    towers: [tower('יפן', 'japan', 1990, 40, [wpp('japan', 1990), wpp('japan', 2000), wpp('japan', 2010)])],
+    startYear: 2000,
+    decades: 2,
+    towers: [tower('יפן', 'japan', 2000, 40, [wpp('japan', 2000), wpp('japan', 2010)])],
     goal: 'reach',
     peoplePerBlock: 3600000,
     wind: 0.2,
-    supplyFactor: 0.5,
+    supplyFactor: 0.3,
     hints: true,
     failHe: {
       collapse: 'קומת התינוקות צרה מדי בשביל מגדל כבד כל כך. בנו קורות משני צידי התינוקות.',
@@ -246,7 +246,7 @@ export const LEVELS: LevelDef[] = [
     goal: 'reach',
     peoplePerBlock: 1100000,
     wind: 0.2,
-    supplyFactor: 0.45,
+    supplyFactor: 0.2,
     hints: true,
     failHe: {
       needs: 'נקודות הבנייה נגמרו לפני שכל הקבוצות קיבלו שירות. הבוגרים בונים, וכל ילד וכל קשיש צריכים חלק ממה שהם בונים.',
@@ -267,12 +267,12 @@ export const LEVELS: LevelDef[] = [
     decades: 2,
     towers: [
       tower('ניז\'ר', 'niger', 2000, 10, [wpp('niger', 2000), wpp('niger', 2010)], { baseX: -7 }),
-      tower('יפן', 'japan', 2000, 28, [wpp('japan', 2000), wpp('japan', 2010)], { baseX: 7 }),
+      tower('יפן', 'japan', 2000, 40, [wpp('japan', 2000), wpp('japan', 2010)], { baseX: 7 }),
     ],
     goal: 'reach',
     peoplePerBlock: 1150000,
     wind: 0.2,
-    supplyFactor: 0.45,
+    supplyFactor: 0.25,
     hints: true,
     failHe: {
       needs: 'כל מגדל צריך משהו אחר: בניז\'ר רוב האנשים ילדים (כיתות), ביפן יותר ויותר קשישים (מרפאות).',
@@ -298,7 +298,7 @@ export const LEVELS: LevelDef[] = [
     },
     peoplePerBlock: 2100000,
     wind: 0.2,
-    supplyFactor: 0.45,
+    supplyFactor: 0.25,
     hints: false,
     failHe: {
       'wrong-call': 'הסתכלו על הלוח: הילודה יורדת בכל עשור. מעט תינוקות = בסיס צר, והילדים הרבים של היום יהיו הבוגרים של מחר.',
@@ -316,7 +316,7 @@ export const LEVELS: LevelDef[] = [
     introHe: [
       'לספרד נכנסים אנשים, וגם יוצאים ממנה, וכולם מופיעים על לוח הזמנים.',
       'מאזן הגירה = נכנסים − יוצאים. הוא מוסיף למגדל או מוריד ממנו, בנוסף לריבוי הטבעי.',
-      'צלצלו בפעמון כשבמגדל יהיו בדיוק 33 משפחות.',
+      'צלצלו בפעמון כשבמגדל יהיו בדיוק 29 משפחות.',
     ],
     startYear: 1990,
     decades: 3,
@@ -329,21 +329,20 @@ export const LEVELS: LevelDef[] = [
         }),
         wpp('spain', 2000, {
           arrivals: [group('s00in', 'labor', 'plane', { 2: 2, 3: 2 }, 'מהגרי עבודה בשנות ה-20 וה-30 לחייהם')],
-          departures: [leave('s00out', 'emigrant', 'plane', { 4: 1 }, 'יוצאים לגור במדינה אחרת')],
-          eventHe: 'נכנסים 4, יוצאים 1: מאזן הגירה +3',
+          eventHe: 'נכנסים 4, כמעט אף אחד לא יוצא: מאזן הגירה +4',
         }),
         wpp('spain', 2010, {
           arrivals: [group('s10in', 'labor', 'train', { 2: 2, 3: 1 }, 'מהגרי עבודה בשנות ה-20 וה-30 לחייהם')],
           departures: [leave('s10out', 'emigrant', 'plane', { 2: 1, 3: 1 }, 'צעירים שיוצאים לעבוד בחו"ל')],
           eventHe: 'נכנסים 3, יוצאים 2: מאזן הגירה +1',
         }),
-      ], { silhouetteYear: 2010 }),
+      ], { silhouetteYear: 2000 }),
     ],
     goal: 'exact',
-    exactTarget: 33,
+    exactTarget: 29,
     peoplePerBlock: 1400000,
-    wind: 0.15,
-    supplyFactor: 0.4,
+    wind: 0.3,
+    supplyFactor: 0.15,
     hints: true,
     failHe: {
       overshoot: 'עברתם את היעד. גם בעשור הזה נכנסו יותר אנשים מאשר יצאו, והמאזן החיובי הוסיף למגדל.',
@@ -390,7 +389,7 @@ export const LEVELS: LevelDef[] = [
     migrantFloors: 'choose',
     peoplePerBlock: 50000,
     wind: 0.15,
-    supplyFactor: 0.45,
+    supplyFactor: 0.2,
     hints: true,
     failHe: {
       needs: 'כל קבוצה מביאה צרכים לקומה שלה: מהגרי עבודה ומהכפר צריכים מקומות עבודה, ומשפחת פליטים צריכה גם כיתות וגם מרפאה.',
@@ -416,7 +415,7 @@ export const LEVELS: LevelDef[] = [
           eventHe: 'דוחף: אבטלה ושכר נמוך. מושך: מקומות עבודה ושכר גבוה בארץ היעד',
         }),
         wpp('philippines', 2010, {
-          departures: [leave('bd2', 'labor', 'plane', { 2: 1, 3: 1, 4: 1 }, 'מדענים ואחיות שעוברים לארץ היעד', 1)],
+          departures: [leave('bd2', 'labor', 'plane', { 2: 2, 3: 1 }, 'מדענים ואחיות שעוברים לארץ היעד', 1)],
           eventHe: 'בריחת מוחות: עוד מומחים עוזבים, והקומות העובדות בארץ המוצא מצטמצמות',
         }),
       ], { baseX: -7, silhouette: undefined }),
@@ -425,7 +424,7 @@ export const LEVELS: LevelDef[] = [
     goal: 'reach',
     peoplePerBlock: 500000,
     wind: 0.2,
-    supplyFactor: 0.45,
+    supplyFactor: 0.2,
     hints: true,
     failHe: {
       needs: 'המומחים לקחו איתם את הצורך במקומות עבודה: עכשיו ארץ היעד צריכה אותם. ארץ המוצא נשארה עם ילדים רבים ופחות בוגרים.',
@@ -461,7 +460,7 @@ export const LEVELS: LevelDef[] = [
     migrantFloors: 'choose',
     peoplePerBlock: 1800000,
     wind: 0.2,
-    supplyFactor: 0.4,
+    supplyFactor: 0.2,
     hints: false,
     failHe: {
       collapse: 'גרמניה מזדקנת: מעט תינוקות והרבה קשישים. הבסיס צריך קורות.',
@@ -510,7 +509,7 @@ export const LEVELS: LevelDef[] = [
     migrantFloors: 'choose',
     peoplePerBlock: 100000,
     wind: 0.15,
-    supplyFactor: 0.5,
+    supplyFactor: 0.3,
     hints: true,
     failHe: {
       needs: 'הגל הביא בבת אחת אנשים לכמה קומות. כל קומה שקיבלה עולים צריכה עכשיו עוד שירות: כיתות, מקומות עבודה או מרפאה.',
@@ -556,7 +555,7 @@ export const LEVELS: LevelDef[] = [
     },
     peoplePerBlock: 200000,
     wind: 0.15,
-    supplyFactor: 0.45,
+    supplyFactor: 0.2,
     hints: true,
     failHe: {
       'wrong-call': 'תינוק שנולד היום יגיע לכיתה א בעוד שש שנים ולעבודה בעוד כעשרים. עולה בן 35 צריך עבודה כבר השנה.',
@@ -585,7 +584,7 @@ export const LEVELS: LevelDef[] = [
     goal: 'reach',
     peoplePerBlock: 200000,
     wind: 0.2,
-    supplyFactor: 0.4,
+    supplyFactor: 0.25,
     hints: true,
     failHe: {
       needs: 'ישראל צריכה גם הרבה כיתות (ילודה גבוהה) וגם יותר מרפאות (הזדקנות). חסר אחד מהשניים, והמגדל לא עומד ביעד.',
@@ -602,9 +601,9 @@ export const LEVELS: LevelDef[] = [
     decades: 3,
     towers: [
       tower('ישראל', 'israel', 2020, 36, [
-        given(WORKBOOK.israel.cbr, WORKBOOK.israel.cdr, { arrivals: [group('f20', 'aliyah', 'plane', { 3: 1 }, 'עולים בשנות ה-30 לחייהם')], eventHe: 'התחזית: 19 לידות ו-5 פטירות לכל 1000' }),
-        wpp('israel', 2030, { arrivals: [group('f30', 'aliyah', 'plane', { 2: 1 }, 'עולים בשנות ה-20 לחייהם')], eventHe: 'התחזית: 17 לידות ו-6 פטירות לכל 1000' }),
-        wpp('israel', 2040, { arrivals: [group('f40', 'aliyah', 'plane', { 4: 1 }, 'עולים בשנות ה-40 לחייהם')], eventHe: 'התחזית: 17 לידות ו-6 פטירות לכל 1000' }),
+        given(WORKBOOK.israel.cbr, WORKBOOK.israel.cdr, { arrivals: [group('f20', 'aliyah', 'plane', { 3: 1 }, 'עולים בשנות ה-30 לחייהם')], eventHe: 'התחזית: 19 לידות ו-5 פטירות לכל 1000. העשרה: עולים, אם העלייה תימשך כמו בשנות ה-2010' }),
+        wpp('israel', 2030, { arrivals: [group('f30', 'aliyah', 'plane', { 2: 1 }, 'עולים בשנות ה-20 לחייהם')], eventHe: 'התחזית: 17 לידות ו-6 פטירות לכל 1000. העשרה: עולים, אם העלייה תימשך כמו בשנות ה-2010' }),
+        wpp('israel', 2040, { arrivals: [group('f40', 'aliyah', 'plane', { 4: 1 }, 'עולים בשנות ה-40 לחייהם')], eventHe: 'התחזית: 17 לידות ו-6 פטירות לכל 1000. העשרה: עולים, אם העלייה תימשך כמו בשנות ה-2010' }),
       ]),
     ],
     goal: 'choose',
@@ -617,7 +616,7 @@ export const LEVELS: LevelDef[] = [
     peoplePerBlock: 250000,
     wind: 0.25,
     migrantFloors: 'choose',
-    supplyFactor: 0.4,
+    supplyFactor: 0.2,
     hints: false,
     failHe: {
       'wrong-call': 'הקומות הרחבות של היום הן הבוגרים. בעוד 30 שנה הם יהיו בקומות הקשישים, ולכן הקשישים גדלים הכי מהר.',

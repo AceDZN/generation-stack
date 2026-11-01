@@ -3,7 +3,7 @@
 
 import { type Band, type Group, type LevelDef, type ServiceType, type Side, BAND_COUNT, groupOf, SERVICE_FOR } from '../src/model/types.ts';
 import { LevelRun, NEAR_MARGIN, staticJudge, type Judge } from '../src/model/game.ts';
-import { insert, people, stability } from '../src/model/tower.ts';
+import { centreX, insert, people, stability } from '../src/model/tower.ts';
 
 export interface Policy {
   /** which door each piece goes in */
@@ -45,16 +45,22 @@ function rng(seed: number): () => number {
   };
 }
 
+/** The steadier door, like the solver: a tie goes to the door that keeps the row centred over its neighbour. */
 function bestSide(run: LevelRun, tower: number, band: Band, count: number, beam = false): Side {
   let best: Side = 'right';
   let bestM = -Infinity;
+  let bestOff = Infinity;
   for (const side of ['right', 'left'] as Side[]) {
     const t = structuredClone(run.towers[tower]);
     for (let k = 0; k < count; k++) insert(t, band, side, beam ? { kind: 'beam', id: 0 } : { kind: 'person', origin: 'native', id: 0 });
     const m = stability(t, run.def.wind).margin;
-    if (m > bestM + 1e-9) {
+    const row = t.rows[band];
+    const ref = t.rows[band + 1]?.cells.length ? t.rows[band + 1] : t.rows[band - 1];
+    const off = ref?.cells.length ? Math.abs(centreX(row) - centreX(ref)) : 0;
+    if (m > bestM + 1e-9 || (Math.abs(m - bestM) <= 1e-9 && off < bestOff)) {
       bestM = m;
       best = side;
+      bestOff = off;
     }
   }
   return best;

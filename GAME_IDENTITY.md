@@ -62,3 +62,10 @@ People blocks are cheerful generic families, never faces of real nationalities. 
 | Rush Hour Israel | grab, rotate and snap road pieces | pieces are people floors with physics, not connectors |
 | Basin Breakers / Rift Makers / Landscape Detective / Tilt World / Cloud Shepherd / Windshift Riders | terrain, plumes, field tools, walking a globe, steering a cloud, flying a glider | no terrain, no map, no avatar: a tower on a turntable |
 | Clumpus, Goblin Kitchen, Halfpipe Joule, Slope Sled, Splash Arc, Bank Shot, Rooftop Radio, Rift Runner, Pie Duel, Perspective Thief | rolling, orders, ramps, sledding, arcs, gliding, portals, duels, perspective | stacking with side insertion and a decade crank |
+
+## Not-like check per world
+
+- **World 1 (ילודה ותמותה):** BirthDeathBalanceLab and PopulationGrowthEngineLab have rate sliders. Here the rates are fixed per decade from WPP or Workbook, and the player only places the babies, builds classrooms and cranks. L3 hits an exact population by reading the board, without changing any rate.
+- **World 2 (פירמידות גיל):** AgePyramidShapeLab sets the base and top widths with sliders. Here the shape grows only from real start pyramids aging floor by floor. The ghosted silhouette is a target to compare against, and it is never dragged.
+- **World 3 (תנועות הגירה):** MigrationPushPullLab, MigrationBalanceMeter and BrainDrainBalanceBoard have barrier sliders, inflow/outflow sliders and draggable worker cards. Here arrivals and departures are timeline events, and there is no barrier, wall or refusal. In L13 the departures leave the origin as events, and the player only slides the arrivals into the destination tower.
+- **World 4 (המגדל הישראלי):** IsraelPopulationMosaicLab shows the composition. Here aliyah waves arrive all at once at every age, and the player supports them with workplaces, classrooms and clinics. Israel's tower is about age structure only: no borders, sovereignty or conflict.
