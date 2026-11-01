@@ -189,6 +189,7 @@ export class App {
         s.end?.();
       } else break;
     }
+    this.autoSelect();
     this.view.update(dt);
     this.chars.update(dt, this.clock / 1000);
     this.updateLeaves(dt);
@@ -219,6 +220,17 @@ export class App {
   private queue(...steps: Step[]): void {
     this.seq.push(...steps);
   }
+  /** Once per decade (and per retry), light the doors for the first tray piece so the next move is obvious. */
+  private autoSelect(): void {
+    const r = this.run;
+    if (!r || this.mode !== 'play' || r.phase !== 'place' || this.animating || this.sel || !r.tray.length || !$('panel').hidden) return;
+    const key = `${r.def.id}:${r.decade}:${r.retries}`;
+    if (this.autoSelected === key) return;
+    this.autoSelected = key;
+    this.select({ type: 'piece', id: r.tray[0].id });
+  }
+  private autoSelected = '';
+
   get animating(): boolean {
     return this.seq.length > 0;
   }

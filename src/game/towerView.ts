@@ -489,6 +489,12 @@ function makeDoor(side: Side): THREE.Object3D {
   arch.position.z = 0.9;
   // a large invisible hit target for fingers
   const hitbox = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.1, 2.4), new THREE.MeshBasicMaterial({ visible: false }));
+  // always drawn on top: an empty nursery's doors sit inside the scissor jack
+  for (const m of [glow, arch, arrow]) {
+    (m.material as THREE.Material).depthTest = false;
+    (m.material as THREE.Material).toneMapped = false;
+    m.renderOrder = 10 + (m === glow ? 0 : 1);
+  }
   g.add(glow, arch, arrow, hitbox);
   return g;
 }
