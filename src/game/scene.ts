@@ -313,14 +313,14 @@ export class World {
   frame(minX: number, maxX: number, height: number, portrait: boolean): void {
     const cx = (minX + maxX) / 2;
     const w = maxX - minX + 6;
-    const h = height + 3.2;
+    const h = height + 2.6;
     // a little below the middle: the HUD covers more of the top than the bottom
     this.wantTarget.set(cx, BASE_Y + h * 0.36, 0);
     const vfov = (this.camera.fov * Math.PI) / 180;
     const hfov = 2 * Math.atan(Math.tan(vfov / 2) * this.camera.aspect);
     const dh = h / 2 / Math.tan(vfov / 2);
     const dw = w / 2 / Math.tan(hfov / 2);
-    this.wantDist = Math.max(dh, dw) * (portrait ? 1.0 : 1.05) + 2;
+    this.wantDist = Math.max(dh, dw) * (portrait ? 1.0 : 0.98) + 1.6;
   }
 
   update(dt: number, reduced: boolean): void {
