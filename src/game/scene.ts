@@ -211,7 +211,7 @@ export class World {
   }
 
   /** Ghost bars of the target pyramid: shares per band scaled to `total` blocks. */
-  setGhost(shares: number[] | undefined, total: number, x: number): void {
+  setGhost(shares: number[] | undefined, total: number, x: number, z = 0): void {
     this.ghost.clear();
     if (!shares) return;
     // a glowing target outline like the mockups: group-coloured glass floors with bright cyan edges and a halo
@@ -223,11 +223,11 @@ export class World {
       const geo = new THREE.BoxGeometry(w, CELL_H * 0.9, 0.7);
       const fill = new THREE.MeshBasicMaterial({ color: new THREE.Color(GROUP_COLOR[groupOf(b)]).lerp(new THREE.Color(0x9fe4ff), 0.35), transparent: true, opacity: 0.55, depthWrite: false });
       const m = new THREE.Mesh(geo, fill);
-      m.position.set(x, y, 0);
+      m.position.set(x, y, z);
       const e = new THREE.LineSegments(new THREE.EdgesGeometry(geo), edge);
       e.position.copy(m.position);
       const h = new THREE.Mesh(new THREE.PlaneGeometry(w + 0.3, CELL_H + 0.02), halo);
-      h.position.set(x, y, -0.4);
+      h.position.set(x, y, z - 0.4);
       this.ghost.add(h, m, e);
     });
   }
@@ -272,7 +272,7 @@ export class World {
     for (const [x, z] of [[-16, -3], [17, 3], [-12, 12], [12, -15]]) put('bench', 0.9, x, z, face(x, z));
     const trees = ['tree-olive', 'tree-cypress', 'tree-palm'];
     for (let i = 0; i < 10; i++) {
-      const a = Math.PI * (0.62 + i * 0.176);
+      const a = Math.PI * (1.02 + i * 0.1); // behind the tower, never between it and the camera
       const r = 20 + (i % 3) * 1.6;
       put(trees[i % 3], trees[i % 3] === 'tree-cypress' ? 5 : 3.6, Math.cos(a) * r, Math.sin(a) * r, i * 1.3);
     }
@@ -340,12 +340,14 @@ export class World {
     const w = maxX - minX + 6;
     const h = height + 2.6;
     // a little below the middle: the HUD covers more of the top than the bottom
-    this.wantTarget.set(cx, BASE_Y + h * 0.36, 0);
+    // on a phone the tray, crank and objective take the bottom third, so aim lower and the tower rides higher
+    this.wantTarget.set(cx, BASE_Y + h * (portrait ? 0.22 : 0.36), 0);
     const vfov = (this.camera.fov * Math.PI) / 180;
     const hfov = 2 * Math.atan(Math.tan(vfov / 2) * this.camera.aspect);
     const dh = h / 2 / Math.tan(vfov / 2);
     const dw = w / 2 / Math.tan(hfov / 2);
-    this.wantDist = Math.max(dh, dw) * (portrait ? 1.0 : 0.98) + 1.6;
+    // never back out past the plaza trees and houses
+    this.wantDist = Math.min(Math.max(dh, dw) * (portrait ? 1.0 : 0.98) + 1.6, portrait ? 24 : 28);
   }
 
   update(dt: number, reduced: boolean): void {

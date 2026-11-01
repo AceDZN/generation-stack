@@ -192,7 +192,9 @@ export class App {
     this.updateLeaves(dt);
     const b = this.view.bounds();
     const portrait = this.canvas.clientHeight > this.canvas.clientWidth;
-    this.world.frame(Math.min(b.minX, this.ghostX() - 2), b.maxX + (portrait ? 1 : 4), b.top + (this.world.jackLift ? 1 : 0), portrait);
+    // portrait: the ghost stands behind the tower, so frame the tower and its label column only
+    if (portrait) this.world.frame(b.minX - 1.6, b.maxX + 4.2, b.top + (this.world.jackLift ? 1 : 0), true);
+    else this.world.frame(Math.min(b.minX, this.ghostX() - 2), b.maxX + 4, b.top + (this.world.jackLift ? 1 : 0), false);
     this.world.update(dt, this.reduced);
   }
 
@@ -256,6 +258,7 @@ export class App {
   resize(): void {
     const el = this.canvas.parentElement!;
     this.world.resize(el.clientWidth, el.clientHeight);
+    if (this.run) this.refreshGhost();
   }
 
   // ---------- screens ----------
@@ -388,7 +391,10 @@ export class App {
     const pop = Math.max(8, r.population(0));
     const maxShare = Math.max(...sh);
     const half = (maxShare * pop) / 2;
-    this.world.setGhost(sh, pop, this.view.bounds().minX - half - 1.2);
+    const b = this.view.bounds();
+    // beside the tower on wide screens; directly behind it on a phone held upright
+    if (this.canvas.clientHeight > this.canvas.clientWidth) this.world.setGhost(sh, pop, (b.minX + b.maxX) / 2, -2.4);
+    else this.world.setGhost(sh, pop, b.minX - half - 1.2);
   }
 
   // ---------- HUD ----------
@@ -426,10 +432,10 @@ export class App {
       if (arr || dep || inbound) html += `<div class="row event"><span>🧳 הגירה</span><b>${ltr(`+${arr + inbound} / −${dep}`)}</b></div>`;
       if (arr || dep || inbound) html += `<div class="row muted"><span>מאזן הגירה</span><b>${ltr((arr + inbound - dep >= 0 ? '+' : '') + (arr + inbound - dep))}</b></div>`;
       if (p.stage && !hideStage) html += `<div class="row muted"><span>שלב במעבר הדמוגרפי</span><b>${ltr(p.stage)}</b></div>`;
-      html += `<div class="row muted"><span>תושבים</span><b>≈ ${fmtPeople(pop)}</b></div>`;
+      html += `<div class="row muted minor"><span>תושבים</span><b>≈ ${fmtPeople(pop)}</b></div>`;
       if (p.eventHe) html += `<div class="event">${p.eventHe}</div>`;
     });
-    html += `<div class="row muted"><span>קובייה</span><b>≈ ${fmtPeople(def.peoplePerBlock)} איש</b></div>`;
+    html += `<div class="row muted minor"><span>קובייה</span><b>≈ ${fmtPeople(def.peoplePerBlock)} איש</b></div>`;
     $('board-body').innerHTML = html;
     // objective
     let obj = '';
