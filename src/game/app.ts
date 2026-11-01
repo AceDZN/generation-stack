@@ -964,32 +964,35 @@ export class App {
   private pickAt(cx: number, cy: number): void {
     const rect = this.canvas.getBoundingClientRect();
     const ndc = new THREE.Vector2(((cx - rect.left) / rect.width) * 2 - 1, -((cy - rect.top) / rect.height) * 2 + 1);
+    this.world.scene.updateMatrixWorld();
     this.ray.setFromCamera(ndc, this.world.camera);
-    const hits = this.ray.intersectObjects(this.view.pickables(), true);
-    for (const h of hits) {
+    // doors first: they sit in front of the floor hit boxes
+    for (const h of this.ray.intersectObjects(this.view.doorObjects(), true)) {
       let o: THREE.Object3D | null = h.object;
-      while (o && !o.userData.door && !o.userData.row) o = o.parent;
-      if (!o) continue;
-      if (o.userData.door) {
+      while (o && !o.userData.door) o = o.parent;
+      if (o) {
         this.door(o.userData.door);
         return;
       }
-      if (o.userData.row) {
-        const row = o.userData.row as { tower: number; band: number; left: number; right: number };
-        if (this.sel?.type === 'service') {
-          this.floor(row.tower, row.band);
-          return;
-        }
-        // tapping a floor's half with a piece selected = that door
-        if (this.sel) {
-          const local = this.view.group.worldToLocal(h.point.clone());
-          const side: Side = local.x > (row.left + row.right) / 2 ? 'right' : 'left';
-          const want = this.sel.type === 'beam' ? 0 : row.band;
-          if (this.sel.type === 'beam' && row.band !== 0) continue;
-          this.door({ tower: row.tower, band: want, side });
-          return;
-        }
+    }
+    for (const h of this.ray.intersectObjects(this.view.rowObjects(), true)) {
+      const row = h.object.userData.row as { tower: number; band: number; left: number; right: number } | undefined;
+      if (!row || !this.sel) continue;
+      if (this.sel.type === 'service') {
+        this.floor(row.tower, row.band);
+        return;
       }
+      // tapping a floor's half with a piece selected = that floor's door on that side
+      const local = this.view.group.worldToLocal(h.point.clone());
+      const side: Side = local.x > (row.left + row.right) / 2 ? 'right' : 'left';
+      if (this.sel.type === 'beam') {
+        if (row.band !== 0) continue;
+      } else {
+        const p = this.run?.tray.find((q) => q.id === (this.sel as { id: number }).id);
+        if (!p || p.tower !== row.tower || !this.run!.allowedBands(p).includes(row.band)) continue;
+      }
+      this.door({ tower: row.tower, band: row.band, side });
+      return;
     }
   }
 
@@ -1086,17 +1089,19 @@ export class App {
     });
   }
 
-  /** Screen position of a door or floor, for real-input tests. */
+  /** Screen position of a door or the middle of a floor, for real-input tests. */
   screenOf(tower: number, band: number, side: Side | 'mid'): { x: number; y: number } | null {
-    const a = this.view.rowAnchor(tower, band, side === 'mid' ? 'right' : side);
-    if (!a) return null;
+    let a: THREE.Vector3 | null;
     if (side === 'mid') {
       const t = this.run!.towers[tower];
       const row = t.rows[band];
-      a.x = (t.baseX + row.leftX + (row.cells.length - 1) / 2);
-    } else a.x += side === 'right' ? 0.5 : -0.5;
+      a = new THREE.Vector3(t.baseX + row.leftX + (row.cells.length - 1) / 2, band * 0.9 + 0.45, 1);
+    } else {
+      a = this.view.doorPosition({ tower, band, side });
+      if (a) a.z = 1.1;
+    }
+    if (!a) return null;
     a.y += BASE_Y;
-    a.z += 0.2;
     const v = a.project(this.world.camera);
     const rect = this.canvas.getBoundingClientRect();
     return { x: rect.left + ((v.x + 1) / 2) * rect.width, y: rect.top + ((1 - v.y) / 2) * rect.height };

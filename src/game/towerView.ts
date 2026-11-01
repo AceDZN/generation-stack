@@ -334,23 +334,30 @@ export class TowerView {
     return false;
   }
 
+  /** Where the door for a floor end sits (local to the tower root). */
+  doorPosition(s: DoorSpec): THREE.Vector3 | null {
+    const tower = this.towersCache[s.tower];
+    if (!tower) return null;
+    const row = tower.rows[s.band];
+    let x: number;
+    if (row.cells.length) x = (tower.baseX + (s.side === 'left' ? row.leftX - 1 : row.leftX + row.cells.length)) * CELL_W;
+    else {
+      // an empty floor: doors at the ends of the floor above, where the new row will grow from
+      const above = tower.rows.find((r, b) => b > s.band && r.cells.length);
+      x = above ? (tower.baseX + (s.side === 'left' ? above.leftX - 0.5 : above.leftX + above.cells.length - 0.5)) * CELL_W : (tower.baseX + (s.side === 'left' ? -1 : 1)) * CELL_W;
+    }
+    return new THREE.Vector3(x, s.band * CELL_H + CELL_H / 2, 0.2);
+  }
+
   /** Glowing arrows at the floor ends where the selected piece may go. */
   showDoors(specs: DoorSpec[]): void {
     this.doors.clear();
     for (const s of specs) {
-      const tower = this.towersCache[s.tower];
-      if (!tower) continue;
-      const row = tower.rows[s.band];
-      let x: number;
-      if (row.cells.length) x = (tower.baseX + (s.side === 'left' ? row.leftX - 1 : row.leftX + row.cells.length)) * CELL_W;
-      else {
-        // an empty floor: doors at the ends of the floor above, where the new row will grow from
-        const above = tower.rows.find((r, b) => b > s.band && r.cells.length);
-        x = above ? (tower.baseX + (s.side === 'left' ? above.leftX - 0.5 : above.leftX + above.cells.length - 0.5)) * CELL_W : (tower.baseX + (s.side === 'left' ? -1 : 1)) * CELL_W;
-      }
+      const pos = this.doorPosition(s);
+      if (!pos) continue;
       const door = makeDoor(s.side);
       door.scale.setScalar(1.35);
-      door.position.set(x, s.band * CELL_H + CELL_H / 2, 0.2);
+      door.position.copy(pos);
       door.userData = { door: s };
       this.doors.add(door);
     }
@@ -371,8 +378,11 @@ export class TowerView {
     });
   }
 
-  pickables(): THREE.Object3D[] {
-    return [...this.doors.children, ...this.hit.children];
+  doorObjects(): THREE.Object3D[] {
+    return this.doors.children;
+  }
+  rowObjects(): THREE.Object3D[] {
+    return this.hit.children;
   }
 
   /** world anchor at the right end of a row, for HTML labels */

@@ -7,7 +7,8 @@
     "dev": "vite --host 0.0.0.0 --port 5246 --strictPort",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 0.0.0.0 --port 4246 --strictPort",
-    "test": "tsx --test tests/*.test.ts"
+    "test": "tsx --test tests/*.test.ts",
+    "host-embed": "node tests/host-embed.mjs 1"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "0.21.0",
