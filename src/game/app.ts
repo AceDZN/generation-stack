@@ -457,9 +457,15 @@ export class App {
     const st = $('stability');
     st.hidden = !def.hints || r.phase !== 'place';
     if (!st.hidden) {
-      const m = Math.min(...r.towers.map((t) => stability(t, def.wind).margin));
+      const reports = r.towers.map((t) => stability(t, def.wind));
+      const worst = reports.reduce((a, b) => (b.margin < a.margin ? b : a));
+      const m = worst.margin;
       const v = Number.isFinite(m) ? Math.max(0, Math.min(1, (m + 0.2) / 1.6)) : 0;
       ($('stab-bar') as HTMLElement).style.setProperty('--v', `${Math.round(v * 100)}%`);
+      // name the weak floor and the side it would tip to, so the bar is actionable
+      $('stab-note').textContent = worst.tipSide && m < NEAR_MARGIN * 2
+        ? `נוטה ל${worst.tipSide === 'left' ? 'שמאל' : 'ימין'} · קומה ${BANDS[worst.weakBand]}`
+        : 'יציב';
     }
   }
 
@@ -618,12 +624,13 @@ export class App {
       this.sfx.unlock();
       this.sfx.click();
       this.closePanel();
-      if (this.run!.needsChoice()) this.showChoice();
-      else this.decadeArrivals();
+      // a flag question waits until the first crank, so the tower can be read first
+      this.decadeArrivals();
+      if (this.run!.needsChoice()) this.toast('לפני המנוף ראש העיר ישאל אתכם שאלה: הסתכלו טוב על המגדל', 4200);
     };
   }
 
-  private showChoice(): void {
+  private showChoice(then?: () => void): void {
     const c = this.run!.def.choice!;
     const p = this.panel(`<h2>🚩 ${c.promptHe}</h2><div class="choices">${c.options.map((o, i) => `<button data-i="${i}">${o.labelHe}</button>`).join('')}</div>`);
     p.querySelectorAll<HTMLButtonElement>('.choices button').forEach((b) => {
@@ -634,7 +641,7 @@ export class App {
         this.closePanel();
         this.toast(`הדגל של ראש העיר: ${c.options[Number(b.dataset.i)].labelHe}`);
         this.renderHud();
-        this.decadeArrivals();
+        then?.();
       };
     });
   }
@@ -745,7 +752,7 @@ export class App {
     if (!r || this.animating || this.paused) return;
     if (!r.canCrank()) {
       this.sfx.oops();
-      if (r.needsChoice()) this.showChoice();
+      if (r.needsChoice() && !r.tray.length) return this.showChoice(() => this.crank());
       else if (r.tray.length) this.toast(`קודם מכניסים את כולם למגדל (נשארו ${r.tray.length})`);
       return;
     }
@@ -894,8 +901,7 @@ export class App {
     this.world.setJack(r.towers.some((t) => t.rows[0].cells.length === 0) ? 1 : 0);
     this.chars.mayor('idle');
     this.renderHud();
-    if (r.needsChoice()) this.showChoice();
-    else this.toast('נסו שוב: אותו עשור, אותם אנשים');
+    this.toast(r.needsChoice() ? 'נסו שוב: הסתכלו על המגדל, והשאלה תחכה לכם במנוף' : 'נסו שוב: אותו עשור, אותם אנשים');
   }
 
   private showWin(): void {
@@ -1098,7 +1104,8 @@ export class App {
     if (this.paused) return;
     if (r.phase === 'failed' && (e.key === 'r' || e.key === 'Enter')) return this.retry();
     if (!$('panel').hidden) {
-      if (e.key === 'Enter') $('panel').querySelector<HTMLButtonElement>('button')?.click();
+      // Enter confirms a panel, but never answers a question by accident
+      if (e.key === 'Enter' && !$('panel').querySelector('.choices')) $('panel').querySelector<HTMLButtonElement>('button')?.click();
       return;
     }
     if (e.key === ' ' || e.key === 'c') {

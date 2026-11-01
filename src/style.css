@@ -92,6 +92,7 @@ button { font-family: inherit; cursor: pointer; }
 
 .stability { border-top: 2px dashed #e1c48a; padding: 5px 10px 7px; font-size: 13px; display: flex; gap: 8px; align-items: center; justify-content: space-between; }
 .stability[hidden] { display: none; }
+.stability small { font-size: 12px; color: #8a5a1c; white-space: nowrap; }
 .stability i { display: block; flex: 1; height: 10px; border-radius: 5px; background: #ddd; position: relative; overflow: hidden; }
 .stability i::after { content: ''; position: absolute; inset: 0; width: var(--v, 50%); background: linear-gradient(90deg, #d8432f, #f2b53c, #3fae4a); }
 

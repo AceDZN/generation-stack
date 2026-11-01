@@ -43,10 +43,18 @@ window.autoplayLevel = (levelNumber) => {
   settle();
   const plan = solve(app.levels[idx]);
   const log = [];
+  // the mayor's question waits for the first crank, so remember the answer until it opens
+  let pending = null;
+  const answer = () => {
+    if (pending !== null && clickPanelButton(`.choices button[data-i="${pending}"]`)) {
+      pending = null;
+      settle();
+    }
+  };
   for (const a of plan.actions) {
     if (a.type === 'choice') {
-      clickPanelButton(`.choices button[data-i="${a.option}"]`);
-      settle();
+      pending = a.option;
+      answer();
     } else if (a.type === 'place') {
       if (!(app.sel && app.sel.type === 'piece' && app.sel.id === a.piece)) card(`[data-piece="${a.piece}"]`);
       const p = app.screenOf(app.run.tray.find((q) => q.id === a.piece).tower, a.band, a.side);
@@ -67,10 +75,12 @@ window.autoplayLevel = (levelNumber) => {
       settle();
       document.getElementById('btn-crank').click();
       settle();
+      answer();
     } else if (a.type === 'bell') {
       settle();
       document.getElementById('btn-bell').click();
       settle();
+      answer();
     }
     log.push(`${a.type}:${app.run.phase}`);
     if (app.run.phase === 'failed') break;
