@@ -857,7 +857,25 @@ export function startTower(id: CountryId, year: number, blocks: number): number[
   const s = (COUNTRIES[id].shares as Record<number, number[]>)[year];
   if (!s) throw new Error(`no WPP shares for ${id} ${year}`);
   const w = [0, s[0], s[1], s[2], s[3], s[4], s[5], s[6] + s[7]];
-  return apportion(w, blocks);
+  return noFloatingFloors(apportion(w, blocks));
+}
+
+/**
+ * Rounding can leave a lone block on a top floor above an empty one (a young country's
+ * single 60+ block over zero 50–59s). A floor can't float, so that block moves down into
+ * the empty floor. Only ever moves one block per gap, and only at the top of the tower.
+ */
+export function noFloatingFloors(start: number[]): number[] {
+  const out = start.slice();
+  for (let b = 2; b < out.length; b++) {
+    if (out[b] > 0) continue;
+    let top = -1;
+    for (let k = out.length - 1; k > b; k--) if (out[k] > 0) { top = k; break; }
+    if (top < 0) break;
+    out[top]--;
+    out[b]++;
+  }
+  return out;
 }
 
 /** The real band shares in `year` (for the ghost silhouette). */

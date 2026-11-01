@@ -100,6 +100,20 @@ export class World {
     const win = new THREE.MeshStandardMaterial({ color: 0x3a6ea5, roughness: 0.4 });
     const leaf = new THREE.MeshStandardMaterial({ color: 0x5aa04a, roughness: 0.9 });
     const trunk = new THREE.MeshStandardMaterial({ color: 0x7a5232, roughness: 0.9 });
+    // a far ring of smaller rooftops, so the town reads as dense like the mockups
+    for (let i = 0; i < 46; i++) {
+      const a = (i / 46) * Math.PI * 2 + r() * 0.06;
+      const rad = 46 + r() * 10;
+      const h = 4 + r() * 6;
+      const w = 4 + r() * 3;
+      const body = new THREE.Mesh(new THREE.BoxGeometry(w, h, w), r() < 0.5 ? wall : wall2);
+      body.position.set(Math.cos(a) * rad, h / 2, Math.sin(a) * rad);
+      body.lookAt(0, h / 2, 0);
+      const top = new THREE.Mesh(new THREE.ConeGeometry(w * 0.75, 2, 4), roof);
+      top.position.set(body.position.x, h + 1, body.position.z);
+      top.rotation.y = Math.PI / 4 - a;
+      this.props.add(body, top);
+    }
     for (let i = 0; i < 34; i++) {
       const a = (i / 34) * Math.PI * 2 + r() * 0.05;
       // keep the view behind the tower open: fewer houses straight ahead of the camera

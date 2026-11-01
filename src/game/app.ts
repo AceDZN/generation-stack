@@ -11,6 +11,7 @@ import { World, BASE_Y } from './scene.ts';
 import { TowerView, type DoorSpec } from './towerView.ts';
 import { Sfx } from './audio.ts';
 import { Characters } from './characters.ts';
+import { renderThumbnails, type ThumbKey } from './thumbnails.ts';
 import { postToHost } from '../host.ts';
 
 type Sel = { type: 'piece'; id: number } | { type: 'service'; kind: ServiceType } | { type: 'beam' } | null;
@@ -75,6 +76,7 @@ export class App {
   private leafMat = new THREE.MeshStandardMaterial({ color: 0x6fae3f, side: THREE.DoubleSide });
   windOn = false;
   interacted = false;
+  thumbs: Partial<Record<ThumbKey, string>> = {};
   lastPlacement: string = '';
 
   constructor(
@@ -93,6 +95,11 @@ export class App {
       /* storage blocked */
     }
     this.view.reduced = this.reduced;
+    try {
+      this.thumbs = renderThumbnails(this.world.renderer, this.view);
+    } catch {
+      this.thumbs = {};
+    }
     this.bindUi();
     this.resize();
     new ResizeObserver(() => this.resize()).observe(canvas.parentElement!);
@@ -317,6 +324,7 @@ export class App {
 
   private begin(def: LevelDef): void {
     this.mode = 'play';
+    this.alert(false);
     this.seq = [];
     $('select').hidden = true;
     $('title').hidden = true;
@@ -422,7 +430,7 @@ export class App {
     const cards: string[] = [];
     // group identical pieces by label so bundles stack
     for (const p of r.tray) {
-      const icon = p.kind === 'baby' ? '👶' : TRANSPORT_ICON[p.transport ?? 'bus'];
+      const icon = p.kind === 'baby' ? this.img('baby', '👶') : TRANSPORT_ICON[p.transport ?? 'bus'];
       const ages = r.def.migrantFloors === 'choose' && p.kind === 'migrant' ? '' : `<span class="muted">${p.kind === 'baby' ? '0–9' : BANDS[p.band]}</span>`;
       const sel = this.sel?.type === 'piece' && this.sel.id === p.id;
       cards.push(`<button class="card ${sel ? 'sel' : ''}" data-piece="${p.id}"><span class="ico">${icon}</span><span class="lbl">${p.labelHe}</span>${ages}<span class="count">×${p.count}</span></button>`);
@@ -430,11 +438,11 @@ export class App {
     cards.push(`<div class="card points" title="נקודות בנייה: הבוגרים בונים"><span>🔨 בנייה</span><span class="big">${r.points}</span><span class="lbl">הבוגרים בונים</span></div>`);
     for (const k of ['classroom', 'workplace', 'clinic'] as ServiceType[]) {
       const sel = this.sel?.type === 'service' && this.sel.kind === k;
-      cards.push(`<button class="card ${sel ? 'sel' : ''}" data-service="${k}" ${r.points <= 0 ? 'disabled' : ''}><span class="ico">${SERVICE_ICON[k]}</span><span class="lbl">${SERVICE_HE[k]}</span></button>`);
+      cards.push(`<button class="card ${sel ? 'sel' : ''}" data-service="${k}" ${r.points <= 0 ? 'disabled' : ''}><span class="ico">${this.img(k, SERVICE_ICON[k])}</span><span class="lbl">${SERVICE_HE[k]}</span></button>`);
     }
     const bsel = this.sel?.type === 'beam';
     const shaky = r.def.hints && r.towers.some((t) => stability(t, r.def.wind).margin < 0.3 && t.rows.some((row, b) => b > 0 && row.cells.length));
-    cards.push(`<button class="card ${bsel ? 'sel' : ''} ${shaky && r.points > 0 ? 'glow' : ''}" data-beam="1" ${r.points <= 0 ? 'disabled' : ''}><span class="ico">🪵</span><span class="lbl">קורה</span></button>`);
+    cards.push(`<button class="card ${bsel ? 'sel' : ''} ${shaky && r.points > 0 ? 'glow' : ''}" data-beam="1" ${r.points <= 0 ? 'disabled' : ''}><span class="ico">${this.img('beam', '🪵')}</span><span class="lbl">קורה</span></button>`);
     tray.innerHTML = cards.join('');
     tray.querySelectorAll<HTMLButtonElement>('button.card').forEach((b) => {
       b.onpointerdown = (e) => {
@@ -445,6 +453,11 @@ export class App {
         this.cardDrag = s;
       };
     });
+  }
+
+  private img(key: ThumbKey, fallback: string): string {
+    const src = this.thumbs[key];
+    return src ? `<img src="${src}" alt="" draggable="false">` : fallback;
   }
 
   select(s: Sel): void {
@@ -712,6 +725,7 @@ export class App {
           if (this.windOn && !this.reduced && Math.random() < 0.3) this.spawnLeaf();
           if (rec.result.collapsed && !crashed && u > 0.35) {
             crashed = true;
+            this.alert(true);
             this.sfx.crash();
             this.chars.mayor('faint');
           }
@@ -794,9 +808,20 @@ export class App {
     this.renderHud();
   }
 
+  private alert(on: boolean): void {
+    let el = document.getElementById('alert');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'alert';
+      $('app').insertBefore(el, $('labels'));
+    }
+    el.classList.toggle('on', on && !this.reduced);
+  }
+
   retry(): void {
     const r = this.run;
     if (!r || r.phase !== 'failed') return;
+    this.alert(false);
     this.closePanel();
     this.seq = [];
     r.retry();

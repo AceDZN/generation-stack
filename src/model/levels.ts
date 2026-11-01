@@ -218,7 +218,7 @@ export const LEVELS: LevelDef[] = [
     ],
     startYear: 1990,
     decades: 3,
-    towers: [tower('יפן', 'japan', 1990, 34, [wpp('japan', 1990), wpp('japan', 2000), wpp('japan', 2010)])],
+    towers: [tower('יפן', 'japan', 1990, 40, [wpp('japan', 1990), wpp('japan', 2000), wpp('japan', 2010)])],
     goal: 'reach',
     peoplePerBlock: 3600000,
     wind: 0.2,
@@ -410,7 +410,7 @@ export const LEVELS: LevelDef[] = [
     startYear: 2000,
     decades: 2,
     towers: [
-      tower('ארץ המוצא', 'philippines', 2000, 16, [
+      tower('ארץ המוצא', 'philippines', 2000, 22, [
         wpp('philippines', 2000, {
           departures: [leave('bd1', 'labor', 'plane', { 2: 1, 3: 2 }, 'רופאים ומהנדסים שעוברים לארץ היעד', 1)],
           eventHe: 'דוחף: אבטלה ושכר נמוך. מושך: מקומות עבודה ושכר גבוה בארץ היעד',

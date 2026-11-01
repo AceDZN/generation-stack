@@ -47,7 +47,7 @@ export class TowerView {
   private boxGeo = new RoundedBoxGeometry(CELL_W * 0.95, CELL_H * 0.93, CELL_D, 3, 0.12);
   private mats: Record<Group, THREE.MeshStandardMaterial>;
   private winMats: THREE.MeshStandardMaterial[];
-  private winGeo = new THREE.PlaneGeometry(CELL_W * 0.52, CELL_H * 0.62);
+  private winGeo = new THREE.PlaneGeometry(CELL_W * 0.66, CELL_H * 0.74);
   private beamMat: THREE.MeshStandardMaterial;
   private doors = new THREE.Group();
   private hit = new THREE.Group();
@@ -68,7 +68,7 @@ export class TowerView {
     };
     this.winMats = [0, 1, 2, 3].map((v) => {
       const t = windowTexture(v);
-      return new THREE.MeshStandardMaterial({ map: t, emissiveMap: t, emissive: 0xffc070, emissiveIntensity: 0.55, transparent: true, alphaTest: 0.1 });
+      return new THREE.MeshStandardMaterial({ map: t, emissiveMap: t, emissive: 0xffc070, emissiveIntensity: 0.8, transparent: true, alphaTest: 0.1 });
     });
     this.beamMat = new THREE.MeshStandardMaterial({ map: beamTexture(), roughness: 0.6 });
     this.sparkleMat = new THREE.SpriteMaterial({ map: sparkleTexture(), color: 0xfff1b0, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
@@ -101,6 +101,15 @@ export class TowerView {
       });
     });
     return out;
+  }
+
+  /** A standalone person block or beam, for tray thumbnails. */
+  sample(kind: 'baby' | 'beam'): THREE.Object3D {
+    const it = this.make(-1 - Math.floor(Math.random() * 1e6), kind === 'beam' ? 'beam' : 'person', 'child');
+    this.group.remove(it.obj);
+    this.items.delete(it.id);
+    if (it.topper) it.topper.visible = false;
+    return it.obj;
   }
 
   /**
@@ -485,7 +494,7 @@ function makeDoor(side: Side): THREE.Object3D {
 }
 
 /** Small procedural buildings for service pieces (kept distinct by shape, sign and colour). */
-function makeService(type: ServiceType): THREE.Object3D {
+export function makeService(type: ServiceType): THREE.Object3D {
   const g = new THREE.Group();
   const porch = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.06, 0.62), new THREE.MeshStandardMaterial({ color: 0xa8743f }));
   porch.position.y = 0.03;

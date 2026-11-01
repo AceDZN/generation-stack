@@ -59,6 +59,7 @@ button { font-family: inherit; cursor: pointer; }
 .tray { position: absolute; bottom: 10px; left: calc(50% + 80px); transform: translateX(-50%); display: flex; gap: 8px; padding: 8px; background: linear-gradient(#fff8e6, #f0dcb0); border: 4px solid var(--gold); border-radius: 18px; box-shadow: 0 6px 16px rgba(0,0,0,.35); max-width: calc(100% - 360px); overflow-x: auto; align-items: stretch; }
 .card { position: relative; min-width: 96px; height: 92px; border-radius: 12px; border: 3px solid #e6c98a; background: #fffaf0; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; padding: 4px; gap: 2px; color: var(--ink); }
 .card .ico { font-size: 34px; line-height: 1; }
+.card .ico img { width: 58px; height: 58px; display: block; margin: -6px auto -4px; pointer-events: none; }
 .card .count { position: absolute; bottom: 4px; left: 6px; background: #fff; border: 2px solid #c9a35a; border-radius: 10px; padding: 0 6px; font-weight: 700; font-size: 15px; direction: ltr; }
 .card.sel { border-color: #ffb300; box-shadow: 0 0 0 4px rgba(255,200,40,.6), 0 0 18px rgba(255,200,40,.9); transform: translateY(-4px); }
 .card:disabled { opacity: .45; }
@@ -175,6 +176,7 @@ button { font-family: inherit; cursor: pointer; }
   .tray { left: 8px; right: 8px; transform: none; max-width: none; bottom: 8px; }
   .card { min-width: 74px; height: 74px; font-size: 11px; }
   .card .ico { font-size: 24px; }
+  .card .ico img { width: 40px; height: 40px; }
   .crank-wrap { bottom: 96px; left: 4px; transform: scale(.72); transform-origin: bottom left; }
   .panel { bottom: 96px; }
   .panel h2 { font-size: 21px; }
@@ -187,3 +189,7 @@ button { font-family: inherit; cursor: pointer; }
 @media (prefers-reduced-motion: reduce) {
   .decades .flip, .card.glow, .crank.ready .plaque, .pop { animation: none; }
 }
+
+#alert { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .4s; box-shadow: inset 0 0 120px 40px rgba(220,40,30,.55); }
+#alert.on { opacity: 1; animation: pulse-red 0.8s ease-in-out infinite alternate; }
+@keyframes pulse-red { from { box-shadow: inset 0 0 90px 30px rgba(220,40,30,.4); } to { box-shadow: inset 0 0 140px 50px rgba(220,40,30,.65); } }
