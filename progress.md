@@ -24,3 +24,10 @@
   git remote add origin https://github.com/AceDZN/generation-stack.git
   git push -u origin main
   ```
+
+## Performance (measured 2026-11-01, Apple-silicon Mac, 1280×720 at DPR 2 = 2560×1440 drawing buffer)
+
+- Level 14 (Germany, widest tower), 120 frames of update + render with `gl.finish()`: median 1.4–2.1 ms, p95 2.1–3.8 ms (that is far above 60 fps on this machine; slower school laptops will have much less headroom).
+- Before simplifying the Tripo props: 1.37 M triangles and 508 draw calls per frame (shadow pass included). After `gltf-transform simplify` on the service buildings, trees, townhouse, bench, fountain and vehicles, and with no shadow casting from the small service buildings: 0.69 M triangles and 451 draw calls. Originals are kept in `assets-src/pre-simplify/` (git-ignored).
+- Real rAF frame rate could not be read here because the desktop browser pane was hidden (rAF paused); the numbers above time the game's own frame step directly.
+- Bundle: `dist/assets/index-*.js` 5.12 MB (1.88 MB gzip), mostly Rapier's inlined WASM and three.js; fonts limited to the Hebrew and Latin subsets; models load at runtime from `models/` (about 12 MB).

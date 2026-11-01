@@ -527,9 +527,10 @@ export function makeService(type: ServiceType, model?: THREE.Object3D | null): T
     const icon = new THREE.Mesh(new THREE.CircleGeometry(0.13, 20), new THREE.MeshBasicMaterial({ map: iconTexture(sign), toneMapped: false }));
     icon.position.set(0.3, size.y * k + 0.14, 0.2);
     g.add(icon);
+    // small on screen and many per tower: receive shadows but don't cast them
     g.traverse((o) => {
       if ((o as THREE.Mesh).isMesh) {
-        o.castShadow = true;
+        o.castShadow = false;
         o.receiveShadow = true;
       }
     });
