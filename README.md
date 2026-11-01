@@ -19,7 +19,7 @@ Deep link a level: `http://localhost:5246/?level=7`.
 
 ## Controls
 
-A line under the year counter always says the one next step (① put the newcomers in, ② build what is missing, ③ pull the crank), and the matching card or button pulses.
+In world 1 (levels 1–5) a line under the year counter says the one next step (① put the newcomers in, ② build what is missing, ③ pull the crank), and the matching card or button pulses. From world 2 on it shows only the goal and a **💡 רמז** button (`H`) that reveals the step for the rest of that decade, so the later levels stay a puzzle.
 
 | Action | Mouse / touch | Keyboard |
 | --- | --- | --- |
@@ -61,7 +61,7 @@ Known limitations:
 - Building only classrooms still wins 8 of the 18 levels with young towers, because ageing turns classrooms into workplaces. The bypass tests record this.
 - The first piece in an empty nursery lands one cell off-centre, depending on the door.
 - The level-select preview covers some stars and always describes level 1.
-- With one-tap services and the step-by-step coach the levels are easier to read but also easier to play on autopilot (PLAYTEST.md, issue 21).
+- One-tap services and the need badges still make the bookkeeping easy; from world 2 the coach stays quiet unless asked, but whether that is enough to keep the later levels a puzzle is untested (PLAYTEST.md, issue 21).
 - Not yet played by real students; [PLAYTEST.md](PLAYTEST.md) is an AI tester's judgement.
 
 ## Deploy to Vercel

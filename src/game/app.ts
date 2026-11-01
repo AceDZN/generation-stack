@@ -67,6 +67,8 @@ export class App {
   private badges: HTMLElement[] = [];
   private ghostCap: HTMLElement | null = null;
   private boardOpen = false;
+  /** the decade (level:decade:retries) whose step the player asked to see with the hint button */
+  private hintFor = '';
   private ray = new THREE.Raycaster();
   private recording: Recording | null = null;
   private levelOpenedAt = 0;
@@ -449,8 +451,10 @@ export class App {
     $('board-more').setAttribute('aria-expanded', String(this.boardOpen));
     $('board').classList.toggle('open', this.boardOpen);
     // the coach: one next step, and the level's goal under it
+    // world 1 is guided step by step; after that the coach keeps quiet unless asked for a hint
     const c = this.coach();
-    $('coach-step').innerHTML = c.text;
+    const guided = def.world <= 1 || this.hintFor === `${def.id}:${r.decade}:${r.retries}`;
+    $('coach-step').innerHTML = !c.text ? '' : guided ? c.text : '<button class="hint-btn" id="hint" title="רמז לצעד הבא (H)">💡 רמז</button> <small>מה עושים עכשיו? אתם מחליטים</small>';
     $('coach').hidden = !c.text;
     let goal = `🎯 להגיע ל־${ltr(r.targetYear)}: המגדל עומד וכל אחד מקבל מענה`;
     if (def.goal === 'exact') goal = `🎯 לצלצל בפעמון כשבמגדל בדיוק ${ltr(def.exactTarget!)} קוביות · ב־${ltr(r.year)} יש ${ltr(r.yearPopulation())}`;
@@ -458,7 +462,7 @@ export class App {
     document.querySelectorAll('.coach-target').forEach((el) => el.classList.remove('coach-target'));
     $('btn-bell').hidden = def.goal !== 'exact';
     this.renderTray();
-    if (c.target && r.phase === 'place' && !this.animating) document.querySelectorAll(c.target).forEach((el) => el.classList.add('coach-target'));
+    if (guided && c.target && r.phase === 'place' && !this.animating) document.querySelectorAll(c.target).forEach((el) => el.classList.add('coach-target'));
     const crank = $('btn-crank') as HTMLButtonElement;
     const can = r.canCrank() && !this.animating;
     crank.disabled = !can && r.phase === 'place' ? false : !can;
@@ -744,6 +748,7 @@ export class App {
       // a flag question waits until the first crank, so the tower can be read first
       this.decadeArrivals();
       if (this.run!.needsChoice()) this.toast('לפני המנוף ראש העיר ישאל אתכם שאלה: הסתכלו טוב על המגדל', 4200);
+      else if (this.levelIdx > 0 && this.run!.def.world === 2 && this.levels[this.levelIdx - 1].world === 1) this.toast('💡 מכאן ראש העיר כבר לא אומר מה לעשות. תקועים? לחצו על רמז', 5000);
       else if (this.run!.towers.length > 1 && this.canvas.clientHeight > this.canvas.clientWidth) this.toast('🔄 סובבו את הטלפון לרוחב כדי לראות את שני המגדלים', 5000);
     };
   }
@@ -856,6 +861,16 @@ export class App {
       this.view.showDoors([]);
     }
     this.afterChange();
+  }
+
+  /** Show the coach's step for the rest of this decade. */
+  showHint(): void {
+    const r = this.run;
+    if (!r || r.phase !== 'place' || r.def.world <= 1) return;
+    this.hintFor = `${r.def.id}:${r.decade}:${r.retries}`;
+    r.useHint();
+    this.sfx.click();
+    this.renderHud();
   }
 
   /** Take back the last placement or build of this decade. */
@@ -1157,6 +1172,9 @@ export class App {
     $('btn-crank').onclick = () => this.crank();
     $('btn-bell').onclick = () => this.ringBell();
     $('btn-pause').onclick = () => this.setPaused(!this.paused);
+    $('coach').addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).closest('#hint')) this.showHint();
+    });
     $('board-more').onclick = () => {
       this.boardOpen = !this.boardOpen;
       this.renderHud();
@@ -1277,6 +1295,7 @@ export class App {
     }
     if (e.key === 'b') return this.ringBell();
     if (e.key === 'z' || e.key === 'Backspace') return this.undo();
+    if (e.key === 'h') return this.showHint();
     const n = Number(e.key);
     if (n >= 1 && n <= 9) {
       const cards = [...document.querySelectorAll<HTMLButtonElement>('#tray button.card:not(:disabled)')];

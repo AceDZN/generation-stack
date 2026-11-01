@@ -63,7 +63,7 @@ Feel:
 
 | # | Note | Status |
 | --- | --- | --- |
-| 21 | After L2 the loop runs on autopilot because the HUD does the arithmetic | ⚠️ Open, and the HUD simplification below makes it easier still. The biggest design question left |
+| 21 | After L2 the loop runs on autopilot because the HUD does the arithmetic | ⚠️ Partly addressed. From world 2 the step-by-step coach goes quiet and only a 💡 hint button reveals the next step (hints are logged). The need badges and one-tap services still do some of the arithmetic; untested with players |
 | 22 | Collapses are the most fun moment, but they came from things the player couldn't see | ✅ Improved by the lean note and the warning toast |
 | 23 | The stork's arrival gates the first selection | ✅ Fixed. The first piece is picked automatically each decade |
 
@@ -71,7 +71,7 @@ Feel:
 
 Following feedback that the screen was crowded and hard to read, the HUD was simplified without changing the art:
 
-- A coach line under the year counter gives one next step at a time and makes the matching control pulse.
+- A coach line under the year counter gives one next step at a time and makes the matching control pulse. It guides only in world 1; later it shows the goal and a hint button.
 - Per-floor ✓/✗ icons and head counts were replaced by an aligned column of age labels and one need badge per age group; a red badge builds the missing service on tap.
 - Services are one tap (they dock on the floor of their group that needs them most). The beam card appears from level 4.
 - An undo button takes back the last placement or build; the pause menu can restart the decade.
