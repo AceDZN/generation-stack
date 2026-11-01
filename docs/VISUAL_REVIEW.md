@@ -10,12 +10,12 @@ The four targets in `docs/visual-targets/` were generated before any game code. 
 | Floors coloured by group with patterns (yellow dots, green stripes, lavender stars) and lit windows with family silhouettes | Same, using canvas textures; windows enlarged and brightened after the first review | ✅ |
 | Glowing blue ghost pyramid on the left | Ghost rebuilt after review: group-tinted glass floors, bright edges, blue halo. Was nearly invisible against the plaza before | ✅ fixed |
 | A baby block sliding into a glowing door at the nursery end | Doors glow at both nursery ends as soon as the decade starts (first tray piece auto-selected). Doors now draw over the jack, which used to hide them | ✅ fixed |
-| Stork (Shula) flying in with the delivery | Tripo stork model delivers each decade's babies | ✅ |
+| Stork (Shula) flying in with the delivery | Tripo stork (rigged), leaning into flight with flapping wings, swoops to the nursery with a cloth bundle each decade | ✅ |
 | Floor labels with group icon and ✓/✗ need markers on the right | Same | ✅ |
 | Mayor's board top right with ילודה/תמותה | Same, plus natural increase, migration, stage and population | ✅ |
 | Tray of 3D piece cards at the bottom, crank bottom left | Cards show the real 3D pieces rendered to thumbnails; crank bottom left | ✅ |
 | Tower fills about half the frame | Camera pulled in after review; small towers still read smaller than the mockup's hero shot | ⚠️ smaller |
-| Painterly depth of field and dense, detailed town | Low-poly town, no depth of field (kept for frame rate) | ⚠️ simpler by design |
+| Painterly depth of field and dense, detailed town | Tripo fountain, benches, olive/cypress/palm trees and townhouses around the plaza, low-poly house ring behind; no depth of field (frame rate) | ⚠️ simpler by design |
 
 ## 02 · Core crank (`02-core-crank.png`)
 
@@ -24,7 +24,7 @@ The four targets in `docs/visual-targets/` were generated before any game code. 
 | Jack lifts the tower and the new nursery slides in underneath | Jack lifts when the nursery empties at aging and folds as the first family slides in | ✅ |
 | Elders fade upward with sparkles at the top | Deaths fade with light and sparkles (gentle, no falling) | ✅ |
 | "+1" hearts and people pop-ups | "+N" pop-ups on placement and arrivals | ✅ |
-| Services as little houses on the floor ends | Services dock on a floor's front porch so the silhouette stays the real pyramid. They read as small buildings, not end-caps. This is a deliberate rule change, see GAME_IDENTITY | ⚠️ by design |
+| Services as little houses on the floor ends | Tripo classroom, workplace and clinic buildings with a floating book/briefcase/heart sign, docked on a floor's front porch so the silhouette stays the real pyramid (deliberate rule change, see GAME_IDENTITY) | ⚠️ placement by design |
 | Year flip on the decade counter | Year digits flip each decade | ✅ |
 
 ## 03 · Near collapse (`03-near-collapse.png`)
@@ -35,7 +35,7 @@ The four targets in `docs/visual-targets/` were generated before any game code. 
 | Red alert vignette at the screen edges | Pulsing red vignette while a collapse plays (off with reduced motion) | ✅ added in review |
 | People tumbling out of windows | Not done: blocks tip and slide but nobody falls out (deliberately gentle) | ➖ omitted |
 | Fail card "המגדל מתנודד!" with retry-from-last-decade and a hint | Fail panel in Hebrew explaining why (which floor, which side), retry from the decade start, hint line | ✅ |
-| Mayor knocked over in the plaza | Mayor plays a worried/fall reaction | ✅ |
+| Mayor knocked over in the plaza | Tripo mayor plays the rigged `fall` clip on a fail (wave and cheer otherwise) | ✅ |
 
 ## 04 · Level select (`04-level-select.png`)
 
@@ -55,3 +55,4 @@ The four targets in `docs/visual-targets/` were generated before any game code. 
 6. Tray cards show 3D-rendered pieces instead of emoji.
 7. Level select laid out 2×2 like the mockup; RTL ribbon clipping fixed.
 8. Camera framing tightened.
+9. Tripo models integrated (stork, mayor, walkers, service buildings, vehicles, plaza props); arrival vehicles moved to a lane behind the tower so they never cover the floors; heavy props simplified.
