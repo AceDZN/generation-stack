@@ -1,0 +1,248 @@
+{
+  "_readme": "All GLBs: Y-up, base at y=0, centred on X/Z, largest extent normalised to 1.0 (see bindBBox). Scale in-game = heightM / bindHeight (heightM values are suggestions for a toy-scale plaza; change freely). 'forward' is the direction the front of the model faces in the file (door / face / nose / bow); rotate by the yaw that maps it onto your scene's forward. Extensions: EXT_texture_webp everywhere, plus KHR_mesh_quantization on boat, classroom, tree-cypress and tree-olive. Both are handled natively by THREE.GLTFLoader (no draco/meshopt/KTX2 decoder needed). Every file was loaded with three 0.186.1 GLTFLoader in headless Chromium and passes the Khronos validator with 0 errors. Tripo meshes are visual dressing only: never use them as Rapier colliders (build cuboid colliders from the tower grid instead). Characters: Mixamo humanoid, 65 joints 'mixamorig:*', root node 'Armature', T-pose bind, every clip is stay-in-place (Hips X/Z constant). Clone characters with SkeletonUtils.clone() for crowds.",
+
+  "stork": {
+    "file": "stork.glb",
+    "role": "Shula the stork (narrator/mascot, carries the baby bundle)",
+    "heightM": 1.1,
+    "bindHeight": 0.765,
+    "forward": "+Z",
+    "rigged": true,
+    "skeleton": "Mixamo humanoid, 65 joints mixamorig:*, root node Armature. Rigged as HUMANOID: the wings ARE the arms (mixamorig:LeftArm/LeftForeArm/LeftHand, same on the right).",
+    "clips": {
+      "idle": "idle",
+      "walk": "walk",
+      "cheer": "cheer",
+      "wave": "greet_04",
+      "land": "jump",
+      "drop": "bow",
+      "alarm": "afraid"
+    },
+    "clipSeconds": { "idle": 15.333, "walk": 2.333, "cheer": 12.083, "greet_04": 2.792, "jump": 2.208, "bow": 6.0, "afraid": 2.583 },
+    "loop": { "idle": true, "walk": true, "cheer": true, "greet_04": false, "jump": false, "bow": false, "afraid": false },
+    "bindBBox": { "min": [-0.5, 0, -0.221], "max": [0.5, 0.765, 0.221] },
+    "procedural": {
+      "fly/flap": "No flying preset exists. Flap = add a sine roll to mixamorig:LeftArm and mixamorig:RightArm on top of idle (about ±35°, 3-4 Hz, opposite signs per side; check the axis in-engine), and move the root along the flight path. cheer also reads as excited wing waving.",
+      "bundle": "The baby bundle is not in the mesh. Parent a small cloth-bundle mesh to mixamorig:Head (beak) or mixamorig:RightHand; release it at about 55% of 'bow' (the lowest point of the bow)."
+    },
+    "notes": "x span = spread wings in the T-pose bind (bbox x ±0.5 is wing tip to wing tip; the body is only about 0.3 wide). 'jump' Hips rise 0.295 -> 0.401 bind units: play once (LoopOnce + clampWhenFinished) for a hop/landing, then crossfade to idle. 'bow' leans forward and down (good for dropping the bundle into a floor door). Brown satchel strap across the chest is part of the mesh. greet_04 is a standing raised-wing wave; wave_goodbye_01 was deliberately left out because it crouches."
+  },
+
+  "mayor": {
+    "file": "mayor.glb",
+    "role": "The mayor (owner of the notice board; reacts to success and collapse)",
+    "heightM": 1.5,
+    "bindHeight": 0.892,
+    "forward": "+Z",
+    "rigged": true,
+    "skeleton": "Mixamo humanoid, 65 joints mixamorig:*, root node Armature",
+    "clips": {
+      "idle": "idle",
+      "walk": "walk",
+      "wave": "greet_04",
+      "cheer": "cheer",
+      "clap": "clap",
+      "worried": "frightened",
+      "faint": "fall"
+    },
+    "clipSeconds": { "idle": 15.333, "walk": 2.333, "greet_04": 2.792, "cheer": 12.083, "clap": 13.667, "frightened": 3.375, "fall": 3.0 },
+    "loop": { "idle": true, "walk": true, "greet_04": false, "cheer": true, "clap": true, "frightened": false, "fall": false },
+    "bindBBox": { "min": [-0.5, 0, -0.23], "max": [0.5, 0.892, 0.23] },
+    "procedural": {
+      "clipboard": "The clipboard did NOT generate in the mesh. Parent a small procedural box (brown board + white sheet) to mixamorig:LeftHand, or to mixamorig:Hips at the left side.",
+      "faint stars": "For the gentle 'faint', play 'fall' once with clampWhenFinished (Hips drop to 0.072 bind units, he ends lying on his back), then orbit 3-4 small star/bird sprites above his head. Keep it comic, not injured."
+    },
+    "notes": "T-pose bind (x span = arms). Round body, glasses, moustache, navy suit, red ceremonial sash with gold medal (generic, no national symbols). 'fall' and 'frightened' are one-shots."
+  },
+
+  "walker": {
+    "file": "walker.glb",
+    "role": "Townsperson for the plaza crowd (walk in, cheer, scatter when the tower wobbles)",
+    "heightM": 1.6,
+    "bindHeight": 0.997,
+    "forward": "+Z",
+    "rigged": true,
+    "skeleton": "Mixamo humanoid, 65 joints mixamorig:*, root node Armature",
+    "clips": {
+      "idle": "idle",
+      "walk": "walk",
+      "run": "run",
+      "wave": "greet_04",
+      "cheer": "cheer",
+      "clap": "clap",
+      "scared": "scared_01"
+    },
+    "clipSeconds": { "idle": 15.333, "walk": 2.333, "run": 1.25, "greet_04": 2.792, "cheer": 12.083, "clap": 13.667, "scared_01": 3.292 },
+    "loop": { "idle": true, "walk": true, "run": true, "greet_04": false, "cheer": true, "clap": true, "scared_01": false },
+    "bindBBox": { "min": [-0.5, 0, -0.198], "max": [0.5, 0.997, 0.198] },
+    "procedural": {
+      "variety": "One mesh for the whole crowd: vary it with a random hue shift on the material (clone the material per instance), scale 0.9-1.1, and random clip start times (action.time = Math.random() * duration)."
+    },
+    "notes": "T-pose bind. Yellow tee, teal vest, green crossbody bag, red sneakers. Generic, no uniform or nationality. 'run' had a constant baked Hips offset (X -0.021, Z +0.405) that was pinned back to the bind values (0.002, 0.002) in assets-src/tools/pin-hips.mjs, so it is now stay-in-place like the others."
+  },
+
+  "classroom": {
+    "file": "classroom.glb",
+    "role": "Classroom attachment piece (education need, ages 0-19)",
+    "heightM": 5.0,
+    "bindHeight": 0.892,
+    "forward": "+Z",
+    "rigged": false,
+    "bindBBox": { "min": [-0.5, 0, -0.412], "max": [0.5, 0.892, 0.412] },
+    "notes": "Honey-limestone gable school house, red tile roof, small bell in the gable, two arched windows, turquoise arched door at +Z, potted plants. QUIRK: a small flag pole with a PLAIN blue flag (no emblem) sits on the roof ridge. It is not a national flag, but if you want zero flags, cover it with a decal/roof prop or pick workplace-bakery for a recolour. Reused from ph-rangers (school.glb)."
+  },
+
+  "workplace": {
+    "file": "workplace.glb",
+    "role": "Workplace attachment piece (jobs need, ages 20-64)",
+    "heightM": 5.0,
+    "bindHeight": 0.863,
+    "forward": "+Z",
+    "rigged": false,
+    "bindBBox": { "min": [-0.5, 0, -0.466], "max": [0.5, 0.863, 0.466] },
+    "notes": "Small sandstone/red-brick workshop with a tall brick chimney at the back corner and a glowing arched furnace opening at +Z. Reused from clean-flow (foundry.glb). Low poly (4.7k tris)."
+  },
+
+  "workplace-bakery": {
+    "file": "workplace-bakery.glb",
+    "role": "Alternative workplace (shop/bakery) for variety",
+    "heightM": 4.5,
+    "bindHeight": 0.712,
+    "forward": "+Z",
+    "rigged": false,
+    "bindBBox": { "min": [-0.5, 0, -0.469], "max": [0.5, 0.712, 0.469] },
+    "notes": "Cream sandstone shop with a red-and-white striped awning and bread shelves at +Z, clay oven on the +X side. Reused from clean-flow (bakery.glb). Low poly (4.6k tris)."
+  },
+
+  "clinic": {
+    "file": "clinic.glb",
+    "role": "Clinic attachment piece (health need, ages 65+)",
+    "heightM": 4.5,
+    "bindHeight": 0.915,
+    "forward": "+Z",
+    "rigged": false,
+    "bindBBox": { "min": [-0.5, 0, -0.497], "max": [0.5, 0.915, 0.497] },
+    "notes": "Round white clinic with mint trim, glossy sky-blue dome with a big red HEART (no red cross, no text) facing +Z over the blue double door, round windows, potted plant, entrance ramp."
+  },
+
+  "townhouse": {
+    "file": "townhouse.glb",
+    "role": "Plaza dressing: narrow two-storey town house",
+    "heightM": 8.0,
+    "bindHeight": 1.0,
+    "forward": "-X",
+    "rigged": false,
+    "bindBBox": { "min": [-0.336, 0, -0.333], "max": [0.336, 1.0, 0.333] },
+    "notes": "Peach plaster walls, orange-red tile roof with chimney, blue shutters, flower box with red geraniums. QUIRK: the green front door and flower box face -X (not +Z); rotate by -PI/2 about Y to face +Z."
+  },
+
+  "house": {
+    "file": "house.glb",
+    "role": "Plaza dressing: small one-storey stone house",
+    "heightM": 4.0,
+    "bindHeight": 0.808,
+    "forward": "+Z",
+    "rigged": false,
+    "bindBBox": { "min": [-0.5, 0, -0.444], "max": [0.5, 0.808, 0.444] },
+    "notes": "Limestone block house, flat parapet roof with a domed rooftop water tank, turquoise arched door at +Z, blue-shuttered window, red geranium pot, vine-covered pergola beam. Reused from ph-rangers (house.glb, via landscape-detective)."
+  },
+
+  "fountain": {
+    "file": "fountain.glb",
+    "role": "Plaza centrepiece fountain",
+    "heightM": 2.5,
+    "bindHeight": 0.732,
+    "forward": "any (radially symmetric)",
+    "rigged": false,
+    "bindBBox": { "min": [-0.494, 0, -0.498], "max": [0.496, 0.732, 0.499] },
+    "notes": "Three-tier stone fountain on a round grassy base with small flowers. Water is baked into the texture; add a procedural water sheet/particles if you want motion."
+  },
+
+  "bench": {
+    "file": "bench.glb",
+    "role": "Plaza dressing: park bench",
+    "heightM": 0.85,
+    "bindHeight": 0.664,
+    "forward": "+Z",
+    "rigged": false,
+    "bindBBox": { "min": [-0.5, 0, -0.267], "max": [0.5, 0.664, 0.267] },
+    "notes": "Wooden slats, ornate black metal arms. The gallery export was NOT normalised (about 98 units wide); a scaled 'root' node (x0.010227) was added in assets-src/tools/normalize.mjs, so it now matches the others. Seat faces +Z (length along X)."
+  },
+
+  "boat": {
+    "file": "boat.glb",
+    "role": "Migration level dressing: harbour fishing boat",
+    "heightM": 4.0,
+    "bindHeight": 0.839,
+    "forward": "-X",
+    "rigged": false,
+    "bindBBox": { "min": [-0.5, 0, -0.222], "max": [0.5, 0.839, 0.222] },
+    "notes": "Red wooden trawler with white wheelhouse and one mast (height includes the mast). The bow points -X: rotate by PI about Y to sail toward +X. Reused from storm-proof (boat.glb)."
+  },
+
+  "locomotive": {
+    "file": "locomotive.glb",
+    "role": "Migration level dressing: toy steam engine",
+    "heightM": 3.5,
+    "bindHeight": 0.761,
+    "forward": "-X",
+    "rigged": false,
+    "bindBBox": { "min": [-0.5, 0, -0.204], "max": [0.5, 0.761, 0.204] },
+    "notes": "Teal boiler with brass bands, red cab and big red wheels, on a short piece of track. Smokebox/front points -X, cab at +X. QUIRK: the chimney is a stack of calendar pages with a puff of steam (from its original game); reads fine as a toy chimney. Reused from tilt-world (locomotive.glb)."
+  },
+
+  "carriage": {
+    "file": "carriage.glb",
+    "role": "Migration level dressing: passenger carriage behind the locomotive",
+    "heightM": 2.4,
+    "bindHeight": 0.506,
+    "forward": "+/-X (symmetric along its length)",
+    "rigged": false,
+    "bindBBox": { "min": [-0.5, 0, -0.16], "max": [0.5, 0.506, 0.16] },
+    "notes": "Teal-blue carriage with brass trim, rounded red roof, four cream-framed windows per side, end platforms with railings, red spoked wheels, on a short rail piece. Length along X; couple it to the locomotive's +X (cab) end. With the suggested heights the two get almost the same scale (about 4.7 vs 4.6), so they read as the same length."
+  },
+
+  "plane": {
+    "file": "plane.glb",
+    "role": "Migration level dressing: small propeller plane",
+    "heightM": 1.8,
+    "bindHeight": 0.503,
+    "forward": "+Z",
+    "rigged": false,
+    "bindBBox": { "min": [-0.5, 0, -0.473], "max": [0.5, 0.503, 0.473] },
+    "notes": "Red vintage single-engine plane with fixed landing gear, nose/propeller at +Z, wingspan along X. Decimated from 961k to 26.8k tris (Blender merge-by-distance + collapse decimate). For a spinning propeller, overlay a translucent disc at the nose; the propeller is part of the single mesh."
+  },
+
+  "tree-olive": {
+    "file": "tree-olive.glb",
+    "role": "Plaza/landscape tree",
+    "heightM": 4.5,
+    "bindHeight": 0.961,
+    "forward": "any",
+    "rigged": false,
+    "bindBBox": { "min": [-0.5, 0, -0.391], "max": [0.5, 0.961, 0.391] },
+    "notes": "Gnarled olive with silver-green canopy. Reused from ph-rangers (olive.glb). Randomise yaw and scale 0.85-1.15 when scattering."
+  },
+
+  "tree-cypress": {
+    "file": "tree-cypress.glb",
+    "role": "Plaza/landscape tree (tall narrow accent)",
+    "heightM": 8.0,
+    "bindHeight": 1.0,
+    "forward": "any",
+    "rigged": false,
+    "bindBBox": { "min": [-0.138, 0, -0.134], "max": [0.138, 1.0, 0.134] },
+    "notes": "Columnar Mediterranean cypress. Very cheap (4.8k tris), good for instancing. Reused from ph-rangers (cypress.glb)."
+  },
+
+  "tree-palm": {
+    "file": "tree-palm.glb",
+    "role": "Plaza/harbour tree",
+    "heightM": 8.0,
+    "bindHeight": 1.0,
+    "forward": "any",
+    "rigged": false,
+    "bindBBox": { "min": [-0.334, 0, -0.306], "max": [0.334, 1.0, 0.306] },
+    "notes": "Fan palm with a small sandy base. Reused from halfpipe-joule (palm.glb); same file as tilt-world's palm (identical sha256)."
+  }
+}

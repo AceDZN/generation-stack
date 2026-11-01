@@ -96,11 +96,7 @@ export class App {
       /* storage blocked */
     }
     this.view.reduced = this.reduced;
-    try {
-      this.thumbs = renderThumbnails(this.world.renderer, this.view);
-    } catch {
-      this.thumbs = {};
-    }
+    this.renderThumbs();
     this.bindUi();
     this.resize();
     new ResizeObserver(() => this.resize()).observe(canvas.parentElement!);
@@ -221,6 +217,27 @@ export class App {
   private queue(...steps: Step[]): void {
     this.seq.push(...steps);
   }
+  private renderThumbs(): void {
+    try {
+      this.thumbs = renderThumbnails(this.world.renderer, this.view);
+    } catch {
+      this.thumbs = {};
+    }
+  }
+
+  /** Tripo models arrived: real service buildings, characters, plaza dressing and fresh tray pictures. */
+  modelsLoaded(): void {
+    this.view.setServiceModels((t) => this.world.spawn(t, 1)?.root ?? null);
+    this.renderThumbs();
+    this.chars.rebuild();
+    this.world.dressTown();
+    if (this.run) {
+      this.view.clear();
+      this.view.sync(this.run.towers, {}, true);
+      this.renderHud();
+    }
+  }
+
   /** Once per decade (and per retry), light the doors for the first tray piece so the next move is obvious. */
   private autoSelect(): void {
     const r = this.run;

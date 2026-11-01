@@ -104,6 +104,15 @@ export class TowerView {
   }
 
   /** A standalone person block or beam, for tray thumbnails. */
+  /** Swap the service buildings for loaded models (falls back per type to the procedural ones). */
+  setServiceModels(get: (type: ServiceType) => THREE.Object3D | null): void {
+    for (const t of ['classroom', 'workplace', 'clinic'] as ServiceType[]) this.serviceProto[t] = makeService(t, get(t));
+  }
+
+  serviceSample(type: ServiceType): THREE.Object3D {
+    return this.serviceProto[type].clone();
+  }
+
   sample(kind: 'baby' | 'beam'): THREE.Object3D {
     const it = this.make(-1 - Math.floor(Math.random() * 1e6), kind === 'beam' ? 'beam' : 'person', 'child');
     this.group.remove(it.obj);
@@ -500,13 +509,32 @@ function makeDoor(side: Side): THREE.Object3D {
 }
 
 /** Small procedural buildings for service pieces (kept distinct by shape, sign and colour). */
-export function makeService(type: ServiceType): THREE.Object3D {
+export function makeService(type: ServiceType, model?: THREE.Object3D | null): THREE.Object3D {
   const g = new THREE.Group();
   const porch = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.06, 0.62), new THREE.MeshStandardMaterial({ color: 0xa8743f }));
   porch.position.y = 0.03;
   g.add(porch);
   const std = (c: number) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.7 });
-  let sign: 'book' | 'case' | 'heart';
+  const sign: 'book' | 'case' | 'heart' = type === 'classroom' ? 'book' : type === 'workplace' ? 'case' : 'heart';
+  if (model) {
+    // a Tripo building fitted onto the porch, with the group sign floating above it
+    const box = new THREE.Box3().setFromObject(model);
+    const size = box.getSize(new THREE.Vector3());
+    const k = Math.min(0.74 / Math.max(size.x, 0.01), 0.56 / Math.max(size.z, 0.01), 0.8 / Math.max(size.y, 0.01));
+    model.scale.multiplyScalar(k);
+    model.position.y += 0.06;
+    g.add(model);
+    const icon = new THREE.Mesh(new THREE.CircleGeometry(0.13, 20), new THREE.MeshBasicMaterial({ map: iconTexture(sign), toneMapped: false }));
+    icon.position.set(0.3, size.y * k + 0.14, 0.2);
+    g.add(icon);
+    g.traverse((o) => {
+      if ((o as THREE.Mesh).isMesh) {
+        o.castShadow = true;
+        o.receiveShadow = true;
+      }
+    });
+    return g;
+  }
   if (type === 'classroom') {
     const body = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.42, 0.44), std(0xfff4dc));
     body.position.y = 0.27;
@@ -516,7 +544,6 @@ export function makeService(type: ServiceType): THREE.Object3D {
     const bell = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 6), new THREE.MeshStandardMaterial({ color: 0xe0b040, metalness: 0.8, roughness: 0.3 }));
     bell.position.y = 0.82;
     g.add(body, roof, bell);
-    sign = 'book';
   } else if (type === 'workplace') {
     const body = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.5, 0.44), std(0x9fb7d6));
     body.position.y = 0.31;
@@ -525,14 +552,12 @@ export function makeService(type: ServiceType): THREE.Object3D {
     const chimney = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 0.3), std(0x8a5a44));
     chimney.position.set(0.2, 0.75, 0);
     g.add(body, roof, chimney);
-    sign = 'case';
   } else {
     const body = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.44, 0.44), std(0xffffff));
     body.position.y = 0.28;
     const dome = new THREE.Mesh(new THREE.SphereGeometry(0.22, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), std(0x2f74d0));
     dome.position.y = 0.5;
     g.add(body, dome);
-    sign = 'heart';
   }
   const icon = new THREE.Mesh(new THREE.CircleGeometry(0.13, 20), new THREE.MeshStandardMaterial({ map: iconTexture(sign), emissive: 0xffffff, emissiveIntensity: 0.15, emissiveMap: iconTexture(sign) }));
   icon.position.set(0, 0.3, 0.226);

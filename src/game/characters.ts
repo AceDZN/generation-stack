@@ -17,13 +17,16 @@ export class Characters {
   shula: THREE.Object3D;
   shulaActor: Actor | null = null;
   private shulaWings: THREE.Object3D[] = [];
+  private shulaBones: { bone: THREE.Object3D; bind: THREE.Quaternion; s: number }[] = [];
+  private shulaFacesZ = false;
+  private bundle: THREE.Object3D;
   private shulaPath: { t: number; dur: number; from: THREE.Vector3; mid: THREE.Vector3; to: THREE.Vector3 } | null = null;
   mayorObj: THREE.Object3D;
   mayorActor: Actor | null = null;
   private mayorState: 'idle' | 'wave' | 'cheer' | 'faint' = 'idle';
   private mayorT = 0;
   private walkers: Walker[] = [];
-  private vehicles: { obj: THREE.Object3D; t: number; dur: number; from: THREE.Vector3; to: THREE.Vector3 }[] = [];
+  private vehicles: { obj: THREE.Object3D; t: number; dur: number; from: THREE.Vector3; to: THREE.Vector3; fly: boolean }[] = [];
   private protestT = 0;
   private cheerT = 0;
   private towerXs: number[] = [0];
@@ -31,6 +34,9 @@ export class Characters {
   constructor(private world: World) {
     this.shula = new THREE.Group();
     this.mayorObj = new THREE.Group();
+    this.bundle = new THREE.Mesh(new THREE.SphereGeometry(0.2, 14, 10), new THREE.MeshStandardMaterial({ color: 0xfff6e0, roughness: 0.8 }));
+    this.bundle.scale.set(1, 0.85, 1);
+    this.bundle.visible = false;
     world.scene.add(this.shula, this.mayorObj);
     this.rebuild();
   }
@@ -41,11 +47,23 @@ export class Characters {
     this.mayorObj.clear();
     for (const w of this.walkers) this.world.scene.remove(w.obj);
     this.walkers = [];
-    this.shulaActor = this.world.spawn('shula', 1.6);
+    this.shulaWings = [];
+    this.shulaBones = [];
+    this.shulaActor = this.world.spawn('stork', 1.2);
+    this.shulaFacesZ = !!this.shulaActor;
     if (this.shulaActor) {
+      // no clip in flight: the T-pose bind already spreads the wings; update() flaps the arm bones
       this.shula.add(this.shulaActor.root);
-      this.shulaActor.play('fly');
+      this.shulaActor.root.rotation.x = 1.05; // lean into flight, beak forward
+      this.shulaActor.root.position.y = -0.4;
+      this.shulaActor.root.traverse((o) => {
+        const n = o.name.replace(/[^A-Za-z]/g, '');
+        if (/^mixamorig(Left|Right)Arm$/.test(n)) this.shulaBones.push({ bone: o, bind: o.quaternion.clone(), s: n.includes('Left') ? 1 : -1 });
+      });
     } else this.shula.add(this.proceduralStork());
+    this.bundle.position.set(0, 0.25, this.shulaFacesZ ? 0.45 : 0);
+    if (!this.shulaFacesZ) this.bundle.position.set(1.5, 0.3, 0);
+    this.shula.add(this.bundle);
     this.shula.position.set(14, 12, -6);
     this.mayorActor = this.world.spawn('mayor', 1.5);
     if (this.mayorActor) {
@@ -53,7 +71,7 @@ export class Characters {
       this.mayorActor.play('idle');
     } else this.mayorObj.add(this.proceduralPerson(0xc8402a, 1.4, true));
     for (let i = 0; i < 7; i++) {
-      const actor = this.world.spawn('townsperson', 1.1 + (i % 3) * 0.08);
+      const actor = this.world.spawn('walker', 1.1 + (i % 3) * 0.08);
       const obj = actor ? actor.root : this.proceduralPerson([0x3f7fd6, 0xe0a030, 0x6fbf4a, 0xd46ab0][i % 4], 1.1, false);
       actor?.play('walk');
       this.world.scene.add(obj);
@@ -84,8 +102,6 @@ export class Characters {
     const beak = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.6, 8), red);
     beak.position.set(1.22, 0.55, 0);
     beak.rotation.z = -Math.PI / 2;
-    const bag = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 10), new THREE.MeshStandardMaterial({ color: 0xfff6e0 }));
-    bag.position.set(1.5, 0.3, 0);
     for (const s of [1, -1]) {
       const wing = new THREE.Group();
       const w = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.05, 1.1), white);
@@ -100,7 +116,7 @@ export class Characters {
     const legs = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.8), red);
     legs.position.set(-0.7, -0.2, 0);
     legs.rotation.z = Math.PI / 2.4;
-    g.add(body, neck, head, beak, bag, legs);
+    g.add(body, neck, head, beak, legs);
     g.traverse((o) => ((o as THREE.Mesh).isMesh ? (o.castShadow = true) : null));
     return g;
   }
@@ -127,20 +143,24 @@ export class Characters {
   /** Shula swoops down to the nursery and back up. */
   shulaDeliver(): void {
     const x = this.towerXs[0];
+    this.bundle.visible = true;
     this.shulaPath = { t: 0, dur: 2.4, from: new THREE.Vector3(x + 16, 13, -4), mid: new THREE.Vector3(x + 1.5, 3.2, 3.2), to: new THREE.Vector3(x + 9, 10.5, -2) };
   }
 
   vehicle(kind: Transport, tower: number): void {
     const x = this.towerXs[tower] ?? 0;
-    const model = this.world.spawn(kind === 'bus' ? 'train' : kind, kind === 'plane' ? 1.4 : 1.2);
+    const name = { boat: 'boat', train: 'locomotive', plane: 'plane', bus: 'carriage' }[kind];
+    const model = this.world.spawn(name, { boat: 2.6, train: 1.8, plane: 1.1, bus: 1.6 }[kind]);
     const obj = model ? model.root : this.proceduralVehicle(kind);
     const fly = kind === 'plane';
-    const from = new THREE.Vector3(x - 22, fly ? 9 : 0.6, 6.5);
-    const to = new THREE.Vector3(x - 6.5, fly ? 3 : 0.6, 6.5);
+    // the lane runs behind the tower, off the turntable, so arrivals never cover the floors
+    const from = new THREE.Vector3(x - 32, fly ? 10 : 0, -9);
+    const to = new THREE.Vector3(x - 14, 0, -9);
     obj.position.copy(from);
-    obj.rotation.y = Math.PI / 2;
+    // travel is along +X: boat and locomotive models point -X, the plane +Z, procedural boxes +Z
+    obj.rotation.y = model && (kind === 'boat' || kind === 'train' || kind === 'bus') ? Math.PI : Math.PI / 2;
     this.world.scene.add(obj);
-    this.vehicles.push({ obj, t: 0, dur: 3.2, from, to });
+    this.vehicles.push({ obj, t: 0, dur: 3.2, from, to, fly });
   }
 
   private proceduralVehicle(kind: Transport): THREE.Object3D {
@@ -188,15 +208,19 @@ export class Characters {
       const ahead = p.from.clone().lerp(p.mid, Math.min(1, u + 0.02)).lerp(p.mid.clone().lerp(p.to, Math.min(1, u + 0.02)), Math.min(1, u + 0.02));
       this.shula.position.copy(pos);
       this.shula.lookAt(ahead.x, pos.y, ahead.z);
-      this.shula.rotateY(-Math.PI / 2);
+      if (!this.shulaFacesZ) this.shula.rotateY(-Math.PI / 2);
+      if (u > 0.55) this.bundle.visible = false; // dropped at the nursery
       if (u >= 1) this.shulaPath = null;
     } else {
       // circling high above the plaza
       const x = this.towerXs[0];
       this.shula.position.set(x + 9 + Math.cos(time * 0.3) * 4, 10.5 + Math.sin(time * 0.7) * 0.5, -2 + Math.sin(time * 0.3) * 3);
-      this.shula.rotation.y = -time * 0.3 + Math.PI;
+      // flying along the circle: heading is the tangent
+      this.shula.rotation.set(0, -time * 0.3 + (this.shulaFacesZ ? 0 : -Math.PI / 2), 0);
     }
     for (const w of this.shulaWings) w.rotation.x = Math.sin(time * 9) * 0.6 * w.userData.s;
+    const flap = Math.sin(time * 7) * 0.55;
+    for (const b of this.shulaBones) b.bone.quaternion.copy(b.bind).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), flap * b.s));
     // mayor procedural fallback motion
     this.mayorT += dt;
     if (!this.mayorActor) {
@@ -216,7 +240,8 @@ export class Characters {
       w.angle += w.speed * dt;
       const jump = this.cheerT > 0 ? Math.abs(Math.sin(time * 9 + w.radius)) * 0.35 : 0;
       w.obj.position.set(Math.cos(w.angle) * w.radius + this.towerXs[0] * 0.5, jump, Math.sin(w.angle) * w.radius);
-      w.obj.rotation.y = -w.angle + (w.speed > 0 ? Math.PI : 0);
+      // models face +Z: heading along the walking direction around the circle
+      w.obj.rotation.y = -w.angle + (w.speed > 0 ? 0 : Math.PI) + (w.actor ? 0 : Math.PI);
     }
     if (this.cheerT > 0) {
       this.cheerT -= dt;
@@ -228,15 +253,22 @@ export class Characters {
       const v = this.vehicles[i];
       v.t += dt / v.dur;
       const u = v.t < 0.5 ? v.t * 2 : 1;
-      v.obj.position.lerpVectors(v.from, v.to, 1 - Math.pow(1 - u, 3));
-      if (v.t > 0.6) v.obj.position.y -= (v.t - 0.6) * 0; // parked
-      if (v.t >= 1) {
-        // drive on and away
-        v.obj.position.x += dt * 8;
-        if (v.obj.position.x > v.to.x + 30) {
-          this.world.scene.remove(v.obj);
-          this.vehicles.splice(i, 1);
+      if (v.t < 1) v.obj.position.lerpVectors(v.from, v.to, 1 - Math.pow(1 - u, 3));
+      else if (v.fly) {
+        // take off again, climbing away over the town
+        v.obj.position.x += dt * 9;
+        v.obj.position.y += dt * 4;
+      } else {
+        // turn round and head back the way it came
+        if (!v.obj.userData.back) {
+          v.obj.userData.back = true;
+          v.obj.rotation.y += Math.PI;
         }
+        v.obj.position.x -= dt * 7;
+      }
+      if (v.t > 1 && (v.obj.position.y > 25 || v.obj.position.x < v.from.x)) {
+        this.world.scene.remove(v.obj);
+        this.vehicles.splice(i, 1);
       }
     }
   }

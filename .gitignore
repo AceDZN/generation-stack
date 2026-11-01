@@ -6,7 +6,8 @@ playwright-report
 .DS_Store
 *.log
 scratch/
-assets-src/
+assets-src/*
+!assets-src/tools/
 
 # Screenshots never go in the repo; design mockups and the Workbook poster are the exceptions.
 *.png

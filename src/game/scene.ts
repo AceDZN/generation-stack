@@ -39,6 +39,7 @@ export class World {
   jackTarget: number | null = null; // eases toward this when set
   ghost = new THREE.Group();
   props = new THREE.Group();
+  dressing = new THREE.Group();
   actors: Actor[] = [];
   models = new Map<string, { scene: THREE.Object3D; anims: THREE.AnimationClip[]; entry: ModelEntry }>();
   // camera rig
@@ -82,7 +83,7 @@ export class World {
 
     this.buildPlaza();
     this.buildTurntable();
-    this.scene.add(this.root, this.ghost, this.props);
+    this.scene.add(this.root, this.ghost, this.props, this.dressing);
     this.root.position.y = BASE_Y;
     this.ghost.position.y = BASE_Y;
   }
@@ -254,6 +255,30 @@ export class World {
         }
       }),
     );
+  }
+
+  /** Tripo props around the plaza (only the ones that loaded): fountain, benches, trees, townhouses. */
+  dressTown(): void {
+    this.dressing.clear();
+    const put = (name: string, h: number, x: number, z: number, yaw: number) => {
+      const a = this.spawn(name, h);
+      if (!a) return;
+      a.root.position.set(x, 0, z);
+      a.root.rotation.y = yaw;
+      this.dressing.add(a.root);
+    };
+    const face = (x: number, z: number) => Math.atan2(-x, -z); // +Z forward turned to the tower
+    put('fountain', 2.2, 15, -11, 0);
+    for (const [x, z] of [[-16, -3], [17, 3], [-12, 12], [12, -15]]) put('bench', 0.9, x, z, face(x, z));
+    const trees = ['tree-olive', 'tree-cypress', 'tree-palm'];
+    for (let i = 0; i < 10; i++) {
+      const a = Math.PI * (0.62 + i * 0.176);
+      const r = 20 + (i % 3) * 1.6;
+      put(trees[i % 3], trees[i % 3] === 'tree-cypress' ? 5 : 3.6, Math.cos(a) * r, Math.sin(a) * r, i * 1.3);
+    }
+    for (const [x, z] of [[-24, -14], [24, -16], [-26, 4]]) {
+      put('townhouse', 6, x, z, face(x, z) + Math.PI / 2); // its door faces -X
+    }
   }
 
   /** A fresh instance of a loaded model scaled to heightM, or null. */

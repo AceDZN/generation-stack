@@ -28,7 +28,7 @@ async function boot(): Promise<void> {
   window.render_game_to_text = () => app.textState();
   window.advanceTime = (ms: number) => app.advanceTime(ms);
   await app.world.loadModels('./models/');
-  app.chars.rebuild();
+  app.modelsLoaded();
   document.getElementById('loading')!.remove();
   const deep = parseLevelParam(location.search, LEVELS.length);
   app.start();

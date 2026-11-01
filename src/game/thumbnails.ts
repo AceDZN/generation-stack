@@ -3,7 +3,7 @@
 
 import * as THREE from 'three';
 import type { ServiceType } from '../model/types.ts';
-import { makeService, type TowerView } from './towerView.ts';
+import type { TowerView } from './towerView.ts';
 
 export type ThumbKey = 'baby' | 'beam' | ServiceType;
 
@@ -24,9 +24,9 @@ export function renderThumbnails(renderer: THREE.WebGLRenderer, view: TowerView)
   const items: [ThumbKey, THREE.Object3D][] = [
     ['baby', view.sample('baby')],
     ['beam', view.sample('beam')],
-    ['classroom', makeService('classroom')],
-    ['workplace', makeService('workplace')],
-    ['clinic', makeService('clinic')],
+    ['classroom', view.serviceSample('classroom')],
+    ['workplace', view.serviceSample('workplace')],
+    ['clinic', view.serviceSample('clinic')],
   ];
   const prevTarget = renderer.getRenderTarget();
   const prevTone = renderer.toneMapping;
