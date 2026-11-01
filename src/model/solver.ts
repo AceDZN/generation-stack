@@ -3,7 +3,7 @@
 
 import { type Band, type Cell, type Group, type LevelDef, type ServiceType, type Side, BAND_COUNT, groupOf, SERVICE_FOR } from './types.ts';
 import { LevelRun, NEAR_MARGIN, staticJudge, type Judge } from './game.ts';
-import { insert, people, stability } from './tower.ts';
+import { centreX, insert, people, stability } from './tower.ts';
 
 export type Action =
   | { type: 'place'; piece: number; band: Band; side: Side }
@@ -24,12 +24,17 @@ export interface SolveResult {
 function bestSide(run: LevelRun, tower: number, band: Band, cell: () => Cell, count = 1): Side {
   let best: Side = 'right';
   let bestM = -Infinity;
+  let bestOff = Infinity;
   for (const side of ['right', 'left'] as Side[]) {
     const t = structuredClone(run.towers[tower]);
     for (let k = 0; k < count; k++) insert(t, band, side, cell());
     const m = stability(t, run.def.wind).margin;
-    if (m > bestM + 1e-9) {
+    // on a tie keep the floor centred over its neighbour, or the tower grows into a staircase
+    const near = t.rows[band + 1]?.cells.length ? t.rows[band + 1] : t.rows[band - 1];
+    const off = near?.cells.length ? Math.abs(centreX(t.rows[band]) - centreX(near)) : 0;
+    if (m > bestM + 1e-9 || (Math.abs(m - bestM) <= 1e-9 && off < bestOff)) {
       bestM = m;
+      bestOff = off;
       best = side;
     }
   }
