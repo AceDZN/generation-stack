@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>מגדל הדורות · Generation Stack</title>
+    <meta name="description" content="משחק בנייה תלת-ממדי: המגדל הוא פירמידת הגיל של מדינה. ילודה, תמותה, הזדקנות והגירה." />
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="view" aria-label="מגדל הדורות"></canvas>
+      <div id="labels" aria-hidden="true"></div>
+      <div id="hud" hidden>
+        <div class="top-left">
+          <button class="round" id="btn-menu" title="מפת השלבים" aria-label="מפת השלבים">☰</button>
+          <button class="round" id="btn-pause" title="השהיה" aria-label="השהיה">⏸</button>
+          <button class="round" id="btn-mute" title="צליל" aria-label="צליל">🔊</button>
+          <button class="round" id="btn-motion" title="הפחתת תנועה" aria-label="הפחתת תנועה">🌀</button>
+        </div>
+        <div class="decades" id="decades">
+          <div class="years"><bdi dir="ltr" id="yr-from">1970</bdi> <span class="arrow">←</span> <bdi dir="ltr" id="yr-to">2020</bdi></div>
+          <div class="pips" id="pips"></div>
+        </div>
+        <div class="board" id="board">
+          <div class="board-title">🏛️ לוח ראש העיר</div>
+          <div class="board-body" id="board-body"></div>
+          <div class="stability" id="stability" hidden><span>יציבות</span><i id="stab-bar"></i></div>
+        </div>
+        <div class="objective" id="objective"></div>
+        <div class="tray" id="tray"></div>
+        <div class="crank-wrap">
+          <button class="crank" id="btn-crank" aria-label="מנוף העשור">
+            <span class="lever"><span class="knob"></span></span>
+            <span class="gear"></span>
+            <span class="plaque">מנוף העשור</span>
+          </button>
+          <button class="bell" id="btn-bell" hidden>🔔 צלצלו בפעמון</button>
+        </div>
+        <div class="toast" id="toast" role="status" aria-live="polite"></div>
+      </div>
+      <div class="panel" id="panel" hidden></div>
+      <div id="select" class="select" hidden></div>
+      <div id="title" class="title-screen" hidden></div>
+      <div id="loading" class="loading">טוען את העיר…</div>
+    </div>
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>
